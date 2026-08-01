@@ -10,8 +10,6 @@ interface ParsedPlayer {
   id: string;
   name: string;
   score: number;
-  rank: number;
-  isWin: boolean;
   factionId: string | null;
 }
 
@@ -25,16 +23,12 @@ function parsePlayers(
   for (const id of playerIds) {
     const name = formData.get(`player_name_${id}`);
     const scoreRaw = formData.get(`player_score_${id}`);
-    const rankRaw = formData.get(`player_rank_${id}`);
     const factionRaw = formData.get(`player_faction_${id}`);
 
     if (typeof name !== "string" || !name.trim()) return null;
 
     const score = Number(scoreRaw);
-    const rank = Number(rankRaw);
-    if (!Number.isFinite(score) || !Number.isInteger(rank) || rank <= 0) {
-      return null;
-    }
+    if (!Number.isFinite(score)) return null;
 
     const factionId =
       hasFactions && typeof factionRaw === "string" && factionRaw
@@ -46,13 +40,32 @@ function parsePlayers(
       id,
       name: name.trim(),
       score,
-      rank,
-      isWin: formData.get(`player_is_win_${id}`) === "on",
       factionId,
     });
   }
 
   return players;
+}
+
+/**
+ * 점수 내림차순 표준 경쟁 순위(1224 방식): 동점자는 같은 순위를 받고,
+ * 다음 순위는 동점자 수만큼 건너뛴다. 동점 처리 규칙 자체는 게임별로
+ * 아직 확인되지 않았으므로(각 docs/games/*.md 참고) 특정 게임 룰을
+ * 가정하지 않는 중립적인 방식만 사용한다.
+ */
+function assignRanks(players: ParsedPlayer[]): Map<string, number> {
+  const sorted = [...players].sort((a, b) => b.score - a.score);
+  const ranks = new Map<string, number>();
+
+  sorted.forEach((player, index) => {
+    if (index > 0 && sorted[index - 1].score === player.score) {
+      ranks.set(player.id, ranks.get(sorted[index - 1].id)!);
+    } else {
+      ranks.set(player.id, index + 1);
+    }
+  });
+
+  return ranks;
 }
 
 export async function createMatch(
@@ -138,13 +151,15 @@ export async function createMatch(
     }
   }
 
+  const ranks = assignRanks(players);
+
   const { error: playersError } = await supabase.from("match_players").insert(
     players.map((p) => ({
       match_id: match.id,
       name: p.name,
       score: p.score,
-      rank: p.rank,
-      is_win: p.isWin,
+      rank: ranks.get(p.id)!,
+      is_win: ranks.get(p.id) === 1,
       is_me: p.id === meId,
       faction_id: p.factionId,
     })),

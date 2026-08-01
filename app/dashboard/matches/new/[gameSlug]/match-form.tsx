@@ -213,7 +213,7 @@ export function MatchForm({
           {players.map((row, index) => (
             <div
               key={row.id}
-              className="grid grid-cols-1 gap-3 rounded-lg border border-zinc-800 p-4 sm:grid-cols-2 lg:grid-cols-6"
+              className="grid grid-cols-1 gap-3 rounded-lg border border-zinc-800 p-4 sm:grid-cols-2 lg:grid-cols-5"
             >
               <input type="hidden" name="player_ids" value={row.id} />
 
@@ -251,24 +251,6 @@ export function MatchForm({
                 />
               </div>
 
-              <div className="space-y-1">
-                <label
-                  htmlFor={`${formId}-rank-${row.id}`}
-                  className="text-xs text-zinc-400"
-                >
-                  순위
-                </label>
-                <input
-                  id={`${formId}-rank-${row.id}`}
-                  name={`player_rank_${row.id}`}
-                  type="number"
-                  min={1}
-                  step="1"
-                  required
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
-                />
-              </div>
-
               {capability.hasFactions && (
                 <div className="lg:col-span-2 space-y-1">
                   <label className="text-xs text-zinc-400">
@@ -282,13 +264,6 @@ export function MatchForm({
                 <label className="flex items-center gap-2 text-sm text-zinc-200">
                   <input type="radio" name="is_me_radio" checked={meId === row.id} onChange={() => setMeId(row.id)} />
                   나
-                </label>
-                <label className="flex items-center gap-2 text-sm text-zinc-200">
-                  <input
-                    type="checkbox"
-                    name={`player_is_win_${row.id}`}
-                  />
-                  승리
                 </label>
                 {players.length > 1 && (
                   <button
