@@ -76,6 +76,45 @@ export interface Database {
         };
         Relationships: [];
       };
+      player_factions: {
+        Row: {
+          id: string;
+          game_id: string;
+          expansion_id: string | null;
+          group_slug: string | null;
+          group_name_ko: string | null;
+          group_name_en: string | null;
+          slug: string;
+          name_ko: string;
+          name_en: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          game_id: string;
+          expansion_id?: string | null;
+          group_slug?: string | null;
+          group_name_ko?: string | null;
+          group_name_en?: string | null;
+          slug: string;
+          name_ko: string;
+          name_en: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          game_id?: string;
+          expansion_id?: string | null;
+          group_slug?: string | null;
+          group_name_ko?: string | null;
+          group_name_en?: string | null;
+          slug?: string;
+          name_ko?: string;
+          name_en?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       matches: {
         Row: {
           id: string;
@@ -112,6 +151,7 @@ export interface Database {
           rank: number;
           is_win: boolean;
           is_me: boolean;
+          faction_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -122,6 +162,7 @@ export interface Database {
           rank: number;
           is_win?: boolean;
           is_me?: boolean;
+          faction_id?: string | null;
           created_at?: string;
         };
         Update: {
@@ -132,6 +173,7 @@ export interface Database {
           rank?: number;
           is_win?: boolean;
           is_me?: boolean;
+          faction_id?: string | null;
           created_at?: string;
         };
         Relationships: [];
