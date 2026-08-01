@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { buildDashboardStats } from "@/lib/domain/stats";
 import { Badge } from "@/components/badge";
@@ -37,11 +38,19 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold text-zinc-50">대시보드</h1>
-        <p className="mt-1 text-sm text-zinc-400">
-          지금까지 기록한 전적을 한눈에 확인하세요.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-zinc-50">대시보드</h1>
+          <p className="mt-1 text-sm text-zinc-400">
+            지금까지 기록한 전적을 한눈에 확인하세요.
+          </p>
+        </div>
+        <Link
+          href="/dashboard/matches/new"
+          className="rounded-md bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-zinc-200"
+        >
+          새 매치 기록
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
