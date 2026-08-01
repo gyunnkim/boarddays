@@ -178,6 +178,27 @@ export interface Database {
         };
         Relationships: [];
       };
+      player_names: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       match_expansions: {
         Row: {
           match_id: string;

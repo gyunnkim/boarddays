@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/app/(auth)/actions";
@@ -20,17 +21,28 @@ export default async function DashboardLayout({
   return (
     <div className="flex min-h-full flex-1 flex-col">
       <header className="flex items-center justify-between border-b border-zinc-800 px-6 py-4">
-        <span className="text-sm font-semibold tracking-tight text-zinc-50">
+        <Link
+          href="/dashboard"
+          className="text-sm font-semibold tracking-tight text-zinc-50 transition-colors hover:text-zinc-300"
+        >
           boarddays
-        </span>
-        <form action={signOut}>
-          <button
-            type="submit"
+        </Link>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/dashboard/settings"
             className="text-sm text-zinc-400 transition-colors hover:text-zinc-100"
           >
-            로그아웃
-          </button>
-        </form>
+            설정
+          </Link>
+          <form action={signOut}>
+            <button
+              type="submit"
+              className="text-sm text-zinc-400 transition-colors hover:text-zinc-100"
+            >
+              로그아웃
+            </button>
+          </form>
+        </div>
       </header>
       <main className="flex-1 px-6 py-8">{children}</main>
     </div>

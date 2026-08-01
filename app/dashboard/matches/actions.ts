@@ -103,19 +103,33 @@ export async function createMatch(
   const playerIds = formData.getAll("player_ids").filter(
     (v): v is string => typeof v === "string" && v.length > 0,
   );
-  const meId = formData.get("is_me");
 
   if (playerIds.length === 0) {
     return { error: "플레이어를 1명 이상 입력해 주세요." };
-  }
-  if (typeof meId !== "string" || !playerIds.includes(meId)) {
-    return { error: "\"나\"로 표시할 플레이어를 선택해 주세요." };
   }
 
   const players = parsePlayers(formData, playerIds, capability.hasFactions);
   if (!players) {
     return { error: "플레이어 정보를 다시 확인해 주세요." };
   }
+
+  const { data: myNames, error: myNamesError } = await supabase
+    .from("player_names")
+    .select("name")
+    .eq("user_id", user.id);
+
+  if (myNamesError) {
+    return { error: "내 이름 정보를 불러오지 못했습니다." };
+  }
+
+  const myNameSet = new Set(myNames.map((n) => n.name));
+  const meMatches = players.filter((p) => myNameSet.has(p.name));
+  if (meMatches.length > 1) {
+    return {
+      error: "\"나\"로 등록된 이름을 가진 플레이어가 여러 명입니다. 이름을 확인해 주세요.",
+    };
+  }
+  const meId = meMatches[0]?.id ?? null;
 
   if (capability.hasFactions) {
     const factionIds = players.map((p) => p.factionId);
