@@ -27,25 +27,29 @@ export default async function NewMatchGameFormPage({
     redirect("/dashboard/matches/new");
   }
 
-  const [{ data: expansions, error: expansionsError }, factionsResult] =
-    await Promise.all([
-      supabase
-        .from("expansions")
-        .select("id, slug, name_ko, name_en")
-        .eq("game_id", game.id)
-        .order("slug"),
-      capability.hasFactions
-        ? supabase
-            .from("player_factions")
-            .select(
-              "id, expansion_id, group_slug, group_name_ko, group_name_en, slug, name_ko, name_en",
-            )
-            .eq("game_id", game.id)
-            .order("group_slug")
-        : Promise.resolve({ data: [], error: null }),
-    ]);
+  const [
+    { data: expansions, error: expansionsError },
+    factionsResult,
+    { data: playerNames, error: playerNamesError },
+  ] = await Promise.all([
+    supabase
+      .from("expansions")
+      .select("id, slug, name_ko, name_en")
+      .eq("game_id", game.id)
+      .order("slug"),
+    capability.hasFactions
+      ? supabase
+          .from("player_factions")
+          .select(
+            "id, expansion_id, group_slug, group_name_ko, group_name_en, slug, name_ko, name_en",
+          )
+          .eq("game_id", game.id)
+          .order("group_slug")
+      : Promise.resolve({ data: [], error: null }),
+    supabase.from("player_names").select("name").order("created_at"),
+  ]);
 
-  if (expansionsError || factionsResult.error) {
+  if (expansionsError || factionsResult.error || playerNamesError) {
     throw new Error("게임 확장팩 정보를 불러오지 못했습니다.");
   }
 
@@ -65,6 +69,7 @@ export default async function NewMatchGameFormPage({
         expansions={expansions ?? []}
         factions={factionsResult.data ?? []}
         capability={capability}
+        myNames={(playerNames ?? []).map((n) => n.name)}
       />
     </div>
   );

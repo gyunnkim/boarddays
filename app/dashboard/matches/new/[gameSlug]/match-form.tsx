@@ -44,21 +44,23 @@ export function MatchForm({
   expansions,
   factions,
   capability,
+  myNames,
 }: {
   game: GameOption;
   expansions: ExpansionOption[];
   factions: FactionOption[];
   capability: GameCapability;
+  myNames: string[];
 }) {
   const [state, action, pending] = useActionState(createMatch, undefined);
   const formId = useId();
+  const nameListId = `${formId}-my-names`;
 
   const [expansionIds, setExpansionIds] = useState<string[]>([]);
   const [players, setPlayers] = useState<PlayerRow[]>(() => [
     { id: nextRowId() },
     { id: nextRowId() },
   ]);
-  const [meId, setMeId] = useState(players[0].id);
   const [factionByRow, setFactionByRow] = useState<Record<string, string>>(
     {},
   );
@@ -96,11 +98,6 @@ export function MatchForm({
       const next = { ...prev };
       delete next[id];
       return next;
-    });
-    setMeId((prev) => {
-      if (prev !== id) return prev;
-      const remaining = players.filter((p) => p.id !== id);
-      return remaining[0]?.id ?? prev;
     });
   }
 
@@ -168,7 +165,13 @@ export function MatchForm({
       className="space-y-8 rounded-xl border border-zinc-800 bg-zinc-900/60 p-6"
     >
       <input type="hidden" name="game_id" value={game.id} />
-      <input type="hidden" name="is_me" value={meId} />
+      {myNames.length > 0 && (
+        <datalist id={nameListId}>
+          {myNames.map((name) => (
+            <option key={name} value={name} />
+          ))}
+        </datalist>
+      )}
 
       {expansions.length > 0 && (
         <fieldset className="space-y-3">
@@ -228,8 +231,10 @@ export function MatchForm({
                   id={`${formId}-name-${row.id}`}
                   name={`player_name_${row.id}`}
                   type="text"
+                  list={nameListId}
                   required
-                  defaultValue={index === 0 ? "나" : undefined}
+                  defaultValue={index === 0 ? myNames[0] : undefined}
+                  placeholder="이름을 선택하거나 입력하세요"
                   className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
                 />
               </div>
@@ -260,12 +265,8 @@ export function MatchForm({
                 </div>
               )}
 
-              <div className="flex items-end gap-4">
-                <label className="flex items-center gap-2 text-sm text-zinc-200">
-                  <input type="radio" name="is_me_radio" checked={meId === row.id} onChange={() => setMeId(row.id)} />
-                  나
-                </label>
-                {players.length > 1 && (
+              {players.length > 1 && (
+                <div className="flex items-end">
                   <button
                     type="button"
                     onClick={() => removePlayer(row.id)}
@@ -273,8 +274,8 @@ export function MatchForm({
                   >
                     삭제
                   </button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
