@@ -144,6 +144,7 @@ Supabase `auth.users`가 인증의 기준이다.
 6.  테스트
 7.  typecheck/lint/build
 8.  최종 diff 검토
+9.  README.md 구현 현황 동기화 (`.claude/rules/readme-sync.md` 참고)
 
 요청과 관계없는 리팩터링을 하지 않는다.
 
@@ -159,10 +160,18 @@ TFMCounter에서 좋은 구현을 발견하면 선택적으로 참고할 수 있
 
 작업 완료 전 확인: - TypeScript 오류 없음 - lint 통과 - 관련 테스트
 통과 - 필요한 경우 production build 통과 - DB 변경 시 RLS 검토 -
-인증/권한 검토 - UI 상태 처리 - 범위 밖 변경 없음
+인증/권한 검토 - UI 상태 처리 - 범위 밖 변경 없음 - README.md가 이번
+작업 결과와 어긋나지 않음
 
 실제로 실행하지 않은 검사를 통과했다고 보고하지 않는다.
 
 ## 13. Next.js 버전 주의사항
 
 @AGENTS.md
+
+## 14. 문서 동기화 규칙
+
+사용자가 시킨 작업을 끝낼 때마다 README.md의 구현 현황을 최신 상태로
+맞춘다. 세부 기준은 아래 문서를 따른다.
+
+@.claude/rules/readme-sync.md
