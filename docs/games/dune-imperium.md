@@ -24,6 +24,7 @@ slug는 안정적으로 유지하고, 화면 표시명(한글)과 분리해서 �
 ## 매치 입력 필드 (확정)
 
 - 플레이어 이름
+- 색상: 빨강(Red) / 노랑(Yellow) / 파랑(Blue) / 초록(Green)
 - 리더 (가문당 2명 중 1명 선택, 확장팩에 따라 선택지 추가 — 아래 [리더
   목록](#리더-목록-확정) 참고)
 - 최종 점수 (VP)
@@ -64,6 +65,8 @@ slug는 안정적으로 유지하고, 화면 표시명(한글)과 분리해서 �
 - `hasFactions: true`, `factionLabel: "리더"` — 리더는 게임 공통
   `player_factions` 카탈로그 테이블에 저장되고, 매치에서 선택된 확장팩에
   따라 선택 가능한 리더 목록이 늘어난다 (`lib/domain/capabilities.ts` 참고).
+- `playerColors`: 빨강/노랑/파랑/초록 4색. 한 매치 내에서 색상은 유일해야
+  한다 (`app/dashboard/matches/actions.ts`).
 
 ## TODO / 확인 필요
 

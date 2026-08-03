@@ -81,12 +81,14 @@ export interface Dictionary {
     noColoniesCatalog: string;
     players: string;
     addPlayer: string;
+    randomizeOrder: string;
     remove: string;
     name: string;
     namePlaceholder: string;
     color: string;
     selectColor: string;
     score: string;
+    total: string;
     saving: string;
     save: string;
   };
@@ -172,12 +174,14 @@ const ko: Dictionary = {
     noColoniesCatalog: "등록된 개척기지 카탈로그가 아직 없습니다.",
     players: "플레이어",
     addPlayer: "+ 플레이어 추가",
+    randomizeOrder: "🎲 순서 정하기",
     remove: "삭제",
     name: "이름",
     namePlaceholder: "이름을 선택하거나 입력하세요",
     color: "색상",
     selectColor: "색상 선택",
     score: "점수",
+    total: "총점",
     saving: "저장 중...",
     save: "매치 저장",
   },
@@ -263,12 +267,14 @@ const en: Dictionary = {
     noColoniesCatalog: "No colony catalog registered yet.",
     players: "Players",
     addPlayer: "+ Add player",
+    randomizeOrder: "🎲 Randomize order",
     remove: "Remove",
     name: "Name",
     namePlaceholder: "Choose or enter a name",
     color: "Color",
     selectColor: "Select a color",
     score: "Score",
+    total: "Total",
     saving: "Saving...",
     save: "Save match",
   },

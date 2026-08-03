@@ -49,9 +49,26 @@ export interface GameCapability {
 export function getGameCapability(slug: string): GameCapability | null {
   switch (slug as SupportedGameSlug) {
     case "dune-imperium":
-      return { hasFactions: true, factionLabel: "리더" };
+      return {
+        hasFactions: true,
+        factionLabel: "리더",
+        playerColors: [
+          { value: "red", labelKo: "빨강" },
+          { value: "yellow", labelKo: "노랑" },
+          { value: "blue", labelKo: "파랑" },
+          { value: "green", labelKo: "초록" },
+        ],
+      };
     case "seti":
-      return { hasFactions: false };
+      return {
+        hasFactions: false,
+        playerColors: [
+          { value: "beige", labelKo: "베이지" },
+          { value: "brown", labelKo: "갈색" },
+          { value: "green", labelKo: "초록색" },
+          { value: "purple", labelKo: "보라색" },
+        ],
+      };
     case "terraforming-mars":
       return {
         hasFactions: true,

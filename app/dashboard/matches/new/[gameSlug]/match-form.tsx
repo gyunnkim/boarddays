@@ -7,6 +7,7 @@ import type { Locale } from "@/lib/i18n/config";
 import { pickLocalized } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionary";
 import { formatTemplate } from "@/lib/i18n/format";
+import { PlayerColorSwatch } from "@/components/player-color-swatch";
 
 interface GameOption {
   id: string;
@@ -99,6 +100,9 @@ export function MatchForm({
   const [colorByRow, setColorByRow] = useState<Record<string, string>>({});
   const [mapId, setMapId] = useState<string | null>(null);
   const [drawnColonyIds, setDrawnColonyIds] = useState<string[]>([]);
+  const [scoreValuesByRow, setScoreValuesByRow] = useState<
+    Record<string, Record<string, string>>
+  >({});
 
   const availableFactions = factions.filter(
     (f) => f.expansion_id === null || expansionIds.includes(f.expansion_id),
@@ -169,6 +173,37 @@ export function MatchForm({
       delete next[id];
       return next;
     });
+    setScoreValuesByRow((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  }
+
+  function randomizeOrder() {
+    setPlayers((prev) => {
+      const shuffled = [...prev];
+      for (let i = shuffled.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    });
+  }
+
+  function updateScoreValue(rowId: string, key: string, value: string) {
+    setScoreValuesByRow((prev) => ({
+      ...prev,
+      [rowId]: { ...prev[rowId], [key]: value },
+    }));
+  }
+
+  function rowScoreTotal(rowId: string): number {
+    return activeScoreComponents.reduce((sum, component) => {
+      const raw = scoreValuesByRow[rowId]?.[component.key];
+      const value = Number(raw);
+      return sum + (Number.isFinite(value) ? value : 0);
+    }, 0);
   }
 
   function selectRandomMap() {
@@ -380,119 +415,140 @@ export function MatchForm({
           <legend className="text-sm font-medium text-zinc-200">
             {dict.players}
           </legend>
-          <button
-            type="button"
-            onClick={addPlayer}
-            className="rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-200 transition-colors hover:bg-zinc-800"
-          >
-            {dict.addPlayer}
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={randomizeOrder}
+              disabled={players.length < 2}
+              className="rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-200 transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {dict.randomizeOrder}
+            </button>
+            <button
+              type="button"
+              onClick={addPlayer}
+              className="rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-200 transition-colors hover:bg-zinc-800"
+            >
+              {dict.addPlayer}
+            </button>
+          </div>
         </div>
 
         <div className="space-y-4">
-          {players.map((row, index) => (
-            <div
-              key={row.id}
-              className="space-y-3 rounded-lg border border-zinc-800 p-4"
-            >
-              <input type="hidden" name="player_ids" value={row.id} />
+          {players.map((row, index) => {
+            const mcInScoreSection =
+              capability.hasMegacredits && capability.scoreComponents;
 
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                <div className="lg:col-span-2 space-y-1">
-                  <label
-                    htmlFor={`${formId}-name-${row.id}`}
-                    className="text-xs text-zinc-400"
-                  >
-                    {dict.name}
-                  </label>
-                  <input
-                    id={`${formId}-name-${row.id}`}
-                    name={`player_name_${row.id}`}
-                    type="text"
-                    list={nameListId}
-                    required
-                    defaultValue={index === 0 ? myNames[0] : undefined}
-                    placeholder={dict.namePlaceholder}
-                    className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
-                  />
-                </div>
+            return (
+              <div
+                key={row.id}
+                className="space-y-3 rounded-lg border border-zinc-800 p-4"
+              >
+                <input type="hidden" name="player_ids" value={row.id} />
 
-                {capability.playerColors && (
-                  <div className="space-y-1">
-                    <label className="text-xs text-zinc-400">
-                      {dict.color}
-                    </label>
-                    <select
-                      name={`player_color_${row.id}`}
-                      value={colorByRow[row.id] ?? ""}
-                      onChange={(e) =>
-                        setColorByRow((prev) => ({
-                          ...prev,
-                          [row.id]: e.target.value,
-                        }))
-                      }
-                      required
-                      className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
-                    >
-                      <option value="">{dict.selectColor}</option>
-                      {colorOptionsForRow(row.id).map((c) => (
-                        <option key={c.value} value={c.value}>
-                          {c.labelKo}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="w-4 shrink-0 text-center text-xs font-medium text-zinc-500">
+                    {index + 1}
+                  </span>
 
-                {capability.hasFactions && (
-                  <div className="lg:col-span-2 space-y-1">
-                    <label className="text-xs text-zinc-400">
-                      {capability.factionLabel ?? "진영"}
-                    </label>
-                    {renderFactionSelect(row.id)}
-                  </div>
-                )}
+                  {capability.playerColors && (
+                    <PlayerColorSwatch color={colorByRow[row.id]} />
+                  )}
 
-                {capability.hasMegacredits && (
-                  <div className="space-y-1">
+                  <div className="min-w-[9rem] flex-1 space-y-1">
                     <label
-                      htmlFor={`${formId}-mc-${row.id}`}
+                      htmlFor={`${formId}-name-${row.id}`}
                       className="text-xs text-zinc-400"
                     >
-                      {capability.megacreditsLabel ?? "메가크레딧"}
+                      {dict.name}
                     </label>
                     <input
-                      id={`${formId}-mc-${row.id}`}
-                      name={`player_mc_${row.id}`}
-                      type="number"
-                      step="1"
+                      id={`${formId}-name-${row.id}`}
+                      name={`player_name_${row.id}`}
+                      type="text"
+                      list={nameListId}
                       required
+                      defaultValue={index === 0 ? myNames[0] : undefined}
+                      placeholder={dict.namePlaceholder}
                       className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
                     />
                   </div>
-                )}
 
-                {!capability.scoreComponents && (
-                  <div className="space-y-1">
-                    <label
-                      htmlFor={`${formId}-score-${row.id}`}
-                      className="text-xs text-zinc-400"
-                    >
-                      {dict.score}
-                    </label>
-                    <input
-                      id={`${formId}-score-${row.id}`}
-                      name={`player_score_${row.id}`}
-                      type="number"
-                      step="1"
-                      required
-                      className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
-                    />
-                  </div>
-                )}
+                  {capability.playerColors && (
+                    <div className="w-36 space-y-1">
+                      <label className="text-xs text-zinc-400">
+                        {dict.color}
+                      </label>
+                      <select
+                        name={`player_color_${row.id}`}
+                        value={colorByRow[row.id] ?? ""}
+                        onChange={(e) =>
+                          setColorByRow((prev) => ({
+                            ...prev,
+                            [row.id]: e.target.value,
+                          }))
+                        }
+                        required
+                        className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
+                      >
+                        <option value="">{dict.selectColor}</option>
+                        {colorOptionsForRow(row.id).map((c) => (
+                          <option key={c.value} value={c.value}>
+                            {c.labelKo}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
-                {players.length > 1 && (
-                  <div className="flex items-end">
+                  {capability.hasFactions && (
+                    <div className="min-w-[10rem] flex-1 space-y-1">
+                      <label className="text-xs text-zinc-400">
+                        {capability.factionLabel ?? "진영"}
+                      </label>
+                      {renderFactionSelect(row.id)}
+                    </div>
+                  )}
+
+                  {!capability.scoreComponents && (
+                    <div className="w-28 space-y-1">
+                      <label
+                        htmlFor={`${formId}-score-${row.id}`}
+                        className="text-xs text-zinc-400"
+                      >
+                        {dict.score}
+                      </label>
+                      <input
+                        id={`${formId}-score-${row.id}`}
+                        name={`player_score_${row.id}`}
+                        type="number"
+                        step="1"
+                        required
+                        className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
+                      />
+                    </div>
+                  )}
+
+                  {capability.hasMegacredits && !mcInScoreSection && (
+                    <div className="w-28 space-y-1">
+                      <label
+                        htmlFor={`${formId}-mc-${row.id}`}
+                        className="text-xs text-zinc-400"
+                      >
+                        {capability.megacreditsLabel ?? "메가크레딧"}
+                      </label>
+                      <input
+                        id={`${formId}-mc-${row.id}`}
+                        name={`player_mc_${row.id}`}
+                        type="number"
+                        step="1"
+                        required
+                        className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
+                      />
+                    </div>
+                  )}
+
+                  {players.length > 1 && (
                     <button
                       type="button"
                       onClick={() => removePlayer(row.id)}
@@ -500,34 +556,74 @@ export function MatchForm({
                     >
                       {dict.remove}
                     </button>
+                  )}
+                </div>
+
+                {capability.scoreComponents && (
+                  <div className="flex flex-wrap items-end gap-3">
+                    <div className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-4">
+                      {activeScoreComponents.map((component) => (
+                        <div key={component.key} className="space-y-1">
+                          <label
+                            htmlFor={`${formId}-${component.key}-${row.id}`}
+                            className="text-xs text-zinc-400"
+                          >
+                            {component.labelKo}
+                          </label>
+                          <input
+                            id={`${formId}-${component.key}-${row.id}`}
+                            name={`player_score_${component.key}_${row.id}`}
+                            type="number"
+                            step="1"
+                            required
+                            value={scoreValuesByRow[row.id]?.[component.key] ?? ""}
+                            onChange={(e) =>
+                              updateScoreValue(
+                                row.id,
+                                component.key,
+                                e.target.value,
+                              )
+                            }
+                            className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
+                          />
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex gap-3">
+                      <div className="w-24 space-y-1">
+                        <span className="block text-xs text-zinc-400">
+                          {dict.total}
+                        </span>
+                        <div className="flex h-[38px] items-center justify-center rounded-md border border-zinc-700 bg-zinc-800/60 px-3 text-sm font-semibold text-zinc-50">
+                          {rowScoreTotal(row.id)}
+                        </div>
+                      </div>
+
+                      {mcInScoreSection && (
+                        <div className="w-28 space-y-1">
+                          <label
+                            htmlFor={`${formId}-mc-${row.id}`}
+                            className="text-xs text-zinc-400"
+                          >
+                            {capability.megacreditsLabel ?? "메가크레딧"}
+                          </label>
+                          <input
+                            id={`${formId}-mc-${row.id}`}
+                            name={`player_mc_${row.id}`}
+                            type="number"
+                            step="1"
+                            required
+                            className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
-
-              {capability.scoreComponents && (
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  {activeScoreComponents.map((component) => (
-                    <div key={component.key} className="space-y-1">
-                      <label
-                        htmlFor={`${formId}-${component.key}-${row.id}`}
-                        className="text-xs text-zinc-400"
-                      >
-                        {component.labelKo}
-                      </label>
-                      <input
-                        id={`${formId}-${component.key}-${row.id}`}
-                        name={`player_score_${component.key}_${row.id}`}
-                        type="number"
-                        step="1"
-                        required
-                        className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </fieldset>
 
