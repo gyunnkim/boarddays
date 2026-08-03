@@ -1,8 +1,13 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { runWithAuthRetry } from "@/lib/supabase/with-retry";
 import { buildDashboardStats } from "@/lib/domain/stats";
 import { buildMatchHistory } from "@/lib/domain/match-history";
 import { Badge } from "@/components/badge";
+import { getLocale } from "@/lib/i18n/get-locale";
+import { getDictionary } from "@/lib/i18n/dictionary";
+import { pickLocalized } from "@/lib/i18n/config";
+import { formatTemplate } from "@/lib/i18n/format";
 
 function formatPercent(rate: number | null) {
   if (rate === null) return "—";
@@ -20,28 +25,40 @@ export default async function DashboardPage({
 }) {
   const { game: selectedSlug } = await searchParams;
   const supabase = await createClient();
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
 
+  // 로그인/회원가입/게스트 입장 직후에는 방금 발급된 JWT로 인해
+  // PostgREST가 아주 짧게 "JWT issued at future"(PGRST303)를 반환할 수
+  // 있다. 실제 세션은 유효하므로, 이 경우에 한해 짧게 재시도한다
+  // (lib/supabase/with-retry.ts 참고).
   const [
     { data: games, error: gamesError },
     { data: matches, error: matchesError },
-    { data: myResults, error: resultsError },
+    { data: matchPlayers, error: matchPlayersError },
     { data: matchExpansions, error: matchExpansionsError },
     { data: expansions, error: expansionsError },
-  ] = await Promise.all([
-    supabase.from("games").select("id, slug, name_ko, name_en").order("slug"),
-    supabase.from("matches").select("id, game_id, played_at"),
-    supabase
-      .from("match_players")
-      .select("match_id, score, rank, is_win")
-      .eq("is_me", true),
-    supabase.from("match_expansions").select("match_id, expansion_id"),
-    supabase.from("expansions").select("id, name_ko"),
-  ]);
+  ] = await runWithAuthRetry(() =>
+    Promise.all([
+      supabase
+        .from("games")
+        .select("id, slug, name_ko, name_en")
+        .order("slug"),
+      supabase.from("matches").select("id, game_id, played_at"),
+      // RLS(matches_owner_all 경유)가 본인 매치의 플레이어만 노출하므로
+      // is_me로 거르지 않고 매치에 참여한 모든 플레이어를 가져온다.
+      supabase
+        .from("match_players")
+        .select("match_id, name, score, rank, is_win, is_me"),
+      supabase.from("match_expansions").select("match_id, expansion_id"),
+      supabase.from("expansions").select("id, name_ko, name_en"),
+    ]),
+  );
 
   if (
     gamesError ||
     matchesError ||
-    resultsError ||
+    matchPlayersError ||
     matchExpansionsError ||
     expansionsError
   ) {
@@ -59,12 +76,22 @@ export default async function DashboardPage({
     gameId: m.game_id,
     playedAt: m.played_at,
   }));
-  const myMatchResults = (myResults ?? []).map((r) => ({
-    matchId: r.match_id,
-    score: r.score,
-    rank: r.rank,
-    isWin: r.is_win,
+  const allMatchPlayers = (matchPlayers ?? []).map((p) => ({
+    matchId: p.match_id,
+    name: p.name,
+    score: p.score,
+    rank: p.rank,
+    isWin: p.is_win,
+    isMe: p.is_me,
   }));
+  const myMatchResults = allMatchPlayers
+    .filter((p) => p.isMe)
+    .map((p) => ({
+      matchId: p.matchId,
+      score: p.score,
+      rank: p.rank,
+      isWin: p.isWin,
+    }));
 
   const stats = buildDashboardStats(
     gameCatalog,
@@ -80,7 +107,12 @@ export default async function DashboardPage({
       matchId: e.match_id,
       expansionId: e.expansion_id,
     })),
-    (expansions ?? []).map((e) => ({ id: e.id, nameKo: e.name_ko })),
+    (expansions ?? []).map((e) => ({
+      id: e.id,
+      nameKo: e.name_ko,
+      nameEn: e.name_en,
+    })),
+    allMatchPlayers,
   );
 
   const selectedGame = selectedSlug
@@ -94,28 +126,30 @@ export default async function DashboardPage({
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-50">대시보드</h1>
+          <h1 className="text-2xl font-semibold text-zinc-50">
+            {dict.dashboard.title}
+          </h1>
           <p className="mt-1 text-sm text-zinc-400">
-            지금까지 기록한 전적을 한눈에 확인하세요.
+            {dict.dashboard.subtitle}
           </p>
         </div>
         <Link
           href="/dashboard/matches/new"
           className="rounded-md bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-zinc-200"
         >
-          새 매치 기록
+          {dict.dashboard.newMatch}
         </Link>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-6">
-          <p className="text-sm text-zinc-400">총 게임 횟수</p>
+          <p className="text-sm text-zinc-400">{dict.dashboard.totalMatches}</p>
           <p className="mt-2 text-3xl font-semibold text-zinc-50">
             {stats.totalMatches}
           </p>
         </div>
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-6">
-          <p className="text-sm text-zinc-400">승률</p>
+          <p className="text-sm text-zinc-400">{dict.dashboard.winRate}</p>
           <p className="mt-2 text-3xl font-semibold text-zinc-50">
             {formatPercent(stats.overallWinRate)}
           </p>
@@ -123,11 +157,10 @@ export default async function DashboardPage({
       </div>
 
       <div>
-        <h2 className="text-lg font-medium text-zinc-100">게임별 기록</h2>
-        <p className="mt-1 text-sm text-zinc-500">
-          게임을 클릭하면 아래 전적 기록을 해당 게임만 필터링해서 볼 수
-          있어요. 다시 클릭하면 필터가 해제됩니다.
-        </p>
+        <h2 className="text-lg font-medium text-zinc-100">
+          {dict.dashboard.perGameTitle}
+        </h2>
+        <p className="mt-1 text-sm text-zinc-500">{dict.dashboard.perGameHint}</p>
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {stats.perGame.map(({ game, totalMatches, winRate }) => {
             const isActive = selectedGame?.id === game.id;
@@ -141,14 +174,17 @@ export default async function DashboardPage({
                     : "border-zinc-800 bg-zinc-900/60 hover:border-zinc-700"
                 }`}
               >
-                <Badge>{game.nameKo}</Badge>
+                <Badge>{pickLocalized(locale, game.nameKo, game.nameEn)}</Badge>
                 {totalMatches > 0 ? (
                   <p className="mt-4 text-sm text-zinc-400">
-                    플레이 {totalMatches}회 · 승률 {formatPercent(winRate)}
+                    {formatTemplate(dict.dashboard.playedSummaryTemplate, {
+                      count: totalMatches,
+                      rate: formatPercent(winRate),
+                    })}
                   </p>
                 ) : (
                   <p className="mt-4 text-sm text-zinc-500">
-                    아직 기록한 매치가 없습니다.
+                    {dict.dashboard.noMatchesForGame}
                   </p>
                 )}
               </Link>
@@ -160,15 +196,17 @@ export default async function DashboardPage({
       <div>
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-medium text-zinc-100">
-            전적 기록
-            {selectedGame ? ` · ${selectedGame.nameKo}` : ""}
+            {dict.dashboard.historyTitle}
+            {selectedGame
+              ? ` · ${pickLocalized(locale, selectedGame.nameKo, selectedGame.nameEn)}`
+              : ""}
           </h2>
           {selectedGame && (
             <Link
               href="/dashboard"
               className="text-sm text-zinc-400 hover:text-zinc-200"
             >
-              전체 보기
+              {dict.dashboard.showAll}
             </Link>
           )}
         </div>
@@ -182,36 +220,58 @@ export default async function DashboardPage({
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge>{entry.game.nameKo}</Badge>
+                    <Badge>
+                      {pickLocalized(locale, entry.game.nameKo, entry.game.nameEn)}
+                    </Badge>
                     {entry.expansions.map((expansion) => (
-                      <Badge key={expansion.id}>{expansion.nameKo}</Badge>
+                      <Badge key={expansion.id}>
+                        {pickLocalized(locale, expansion.nameKo, expansion.nameEn)}
+                      </Badge>
                     ))}
                   </div>
                   <span className="text-xs text-zinc-500">
                     {formatDate(entry.playedAt)}
                   </span>
                 </div>
-                <div className="mt-3 flex items-center gap-4 text-sm">
-                  <span
-                    className={
-                      entry.isWin
-                        ? "font-medium text-emerald-400"
-                        : "font-medium text-red-400"
-                    }
-                  >
-                    {entry.isWin ? "승" : "패"}
-                  </span>
-                  <span className="text-zinc-300">{entry.myRank}위</span>
-                  <span className="text-zinc-300">{entry.myScore}점</span>
-                </div>
+                <ul className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
+                  {entry.players.map((player, index) => (
+                    <li
+                      key={`${entry.matchId}-${index}-${player.name}`}
+                      className={
+                        player.isMe
+                          ? "flex items-center gap-1.5 font-medium text-zinc-50"
+                          : "flex items-center gap-1.5 text-zinc-400"
+                      }
+                    >
+                      <span
+                        className={
+                          player.isWin ? "text-emerald-400" : "text-zinc-500"
+                        }
+                      >
+                        {formatTemplate(dict.dashboard.rankTemplate, {
+                          n: player.rank,
+                        })}
+                      </span>
+                      <span>{player.name}</span>
+                      <span>
+                        {formatTemplate(dict.dashboard.scoreTemplate, {
+                          n: player.score,
+                        })}
+                      </span>
+                      {player.isMe && (
+                        <Badge>{dict.dashboard.you}</Badge>
+                      )}
+                    </li>
+                  ))}
+                </ul>
               </li>
             ))}
           </ul>
         ) : (
           <p className="mt-4 text-sm text-zinc-500">
             {selectedGame
-              ? "이 게임으로 기록한 매치가 없습니다."
-              : "아직 기록한 매치가 없습니다."}
+              ? dict.dashboard.historyEmptyFiltered
+              : dict.dashboard.historyEmpty}
           </p>
         )}
       </div>

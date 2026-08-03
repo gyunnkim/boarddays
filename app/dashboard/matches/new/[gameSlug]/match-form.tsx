@@ -3,6 +3,10 @@
 import { useActionState, useId, useMemo, useState } from "react";
 import { createMatch } from "../../actions";
 import type { GameCapability } from "@/lib/domain/capabilities";
+import type { Locale } from "@/lib/i18n/config";
+import { pickLocalized } from "@/lib/i18n/config";
+import type { Dictionary } from "@/lib/i18n/dictionary";
+import { formatTemplate } from "@/lib/i18n/format";
 
 interface GameOption {
   id: string;
@@ -63,6 +67,8 @@ export function MatchForm({
   capability,
   myNames,
   defaultExpansionIds,
+  locale,
+  dict,
 }: {
   game: GameOption;
   expansions: ExpansionOption[];
@@ -72,6 +78,8 @@ export function MatchForm({
   capability: GameCapability;
   myNames: string[];
   defaultExpansionIds: string[];
+  locale: Locale;
+  dict: Dictionary["matchForm"];
 }) {
   const [state, action, pending] = useActionState(createMatch, undefined);
   const formId = useId();
@@ -81,6 +89,7 @@ export function MatchForm({
     () => defaultExpansionIds,
   );
   const [players, setPlayers] = useState<PlayerRow[]>(() => [
+    { id: nextRowId() },
     { id: nextRowId() },
     { id: nextRowId() },
   ]);
@@ -208,7 +217,11 @@ export function MatchForm({
         const key = option.group_slug;
         if (!groups.has(key)) {
           groups.set(key, {
-            label: option.group_name_ko ?? key,
+            label: pickLocalized(
+              locale,
+              option.group_name_ko ?? key,
+              option.group_name_en ?? option.group_name_ko ?? key,
+            ),
             options: [],
           });
         }
@@ -231,14 +244,14 @@ export function MatchForm({
         <option value="">{capability.factionLabel ?? "선택"} 선택</option>
         {ungrouped.map((f) => (
           <option key={f.id} value={f.id}>
-            {f.name_ko}
+            {pickLocalized(locale, f.name_ko, f.name_en)}
           </option>
         ))}
         {[...groups.entries()].map(([key, group]) => (
           <optgroup key={key} label={group.label}>
             {group.options.map((f) => (
               <option key={f.id} value={f.id}>
-                {f.name_ko}
+                {pickLocalized(locale, f.name_ko, f.name_en)}
               </option>
             ))}
           </optgroup>
@@ -264,7 +277,7 @@ export function MatchForm({
       {expansions.length > 0 && (
         <fieldset className="space-y-3">
           <legend className="text-sm font-medium text-zinc-200">
-            사용한 확장팩
+            {dict.expansionsUsed}
           </legend>
           <div className="flex flex-wrap gap-3">
             {expansions.map((expansion) => (
@@ -279,7 +292,7 @@ export function MatchForm({
                   checked={expansionIds.includes(expansion.id)}
                   onChange={() => toggleExpansion(expansion.id)}
                 />
-                {expansion.name_ko}
+                {pickLocalized(locale, expansion.name_ko, expansion.name_en)}
               </label>
             ))}
           </div>
@@ -288,7 +301,9 @@ export function MatchForm({
 
       {capability.hasMapSelection && (
         <fieldset className="space-y-3">
-          <legend className="text-sm font-medium text-zinc-200">맵</legend>
+          <legend className="text-sm font-medium text-zinc-200">
+            {dict.map}
+          </legend>
           <div className="flex flex-wrap items-center gap-3">
             <select
               name="terraforming_mars_map_id"
@@ -297,10 +312,10 @@ export function MatchForm({
               required
               className="rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
             >
-              <option value="">맵 선택</option>
+              <option value="">{dict.selectMap}</option>
               {availableMaps.map((m) => (
                 <option key={m.id} value={m.id}>
-                  {m.name_ko}
+                  {pickLocalized(locale, m.name_ko, m.name_en)}
                 </option>
               ))}
             </select>
@@ -309,7 +324,7 @@ export function MatchForm({
               onClick={selectRandomMap}
               className="rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-200 transition-colors hover:bg-zinc-800"
             >
-              랜덤 선택
+              {dict.randomSelect}
             </button>
           </div>
         </fieldset>
@@ -318,7 +333,7 @@ export function MatchForm({
       {capability.colonyDraw && coloniesEnabled && (
         <fieldset className="space-y-3">
           <legend className="text-sm font-medium text-zinc-200">
-            개척기지
+            {dict.colonies}
           </legend>
           <div className="flex flex-wrap items-center gap-3">
             <button
@@ -327,24 +342,31 @@ export function MatchForm({
               disabled={colonies.length === 0}
               className="rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-200 transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              개척기지 뽑기 ({players.length + capability.colonyDraw.countOffset}개)
+              {formatTemplate(dict.drawColoniesTemplate, {
+                count: players.length + capability.colonyDraw.countOffset,
+              })}
             </button>
             {colonies.length === 0 && (
               <span className="text-xs text-zinc-500">
-                등록된 개척기지 카탈로그가 아직 없습니다.
+                {dict.noColoniesCatalog}
               </span>
             )}
           </div>
           {effectiveDrawnColonyIds.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {effectiveDrawnColonyIds.map((id) => (
-                <span
-                  key={id}
-                  className="rounded-md border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-xs text-zinc-200"
-                >
-                  {colonyById.get(id)?.name_ko ?? id}
-                </span>
-              ))}
+              {effectiveDrawnColonyIds.map((id) => {
+                const colony = colonyById.get(id);
+                return (
+                  <span
+                    key={id}
+                    className="rounded-md border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-xs text-zinc-200"
+                  >
+                    {colony
+                      ? pickLocalized(locale, colony.name_ko, colony.name_en)
+                      : id}
+                  </span>
+                );
+              })}
             </div>
           )}
           {effectiveDrawnColonyIds.map((id) => (
@@ -356,14 +378,14 @@ export function MatchForm({
       <fieldset className="space-y-4">
         <div className="flex items-center justify-between">
           <legend className="text-sm font-medium text-zinc-200">
-            플레이어
+            {dict.players}
           </legend>
           <button
             type="button"
             onClick={addPlayer}
             className="rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-200 transition-colors hover:bg-zinc-800"
           >
-            + 플레이어 추가
+            {dict.addPlayer}
           </button>
         </div>
 
@@ -381,7 +403,7 @@ export function MatchForm({
                     htmlFor={`${formId}-name-${row.id}`}
                     className="text-xs text-zinc-400"
                   >
-                    이름
+                    {dict.name}
                   </label>
                   <input
                     id={`${formId}-name-${row.id}`}
@@ -390,14 +412,16 @@ export function MatchForm({
                     list={nameListId}
                     required
                     defaultValue={index === 0 ? myNames[0] : undefined}
-                    placeholder="이름을 선택하거나 입력하세요"
+                    placeholder={dict.namePlaceholder}
                     className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
                   />
                 </div>
 
                 {capability.playerColors && (
                   <div className="space-y-1">
-                    <label className="text-xs text-zinc-400">색상</label>
+                    <label className="text-xs text-zinc-400">
+                      {dict.color}
+                    </label>
                     <select
                       name={`player_color_${row.id}`}
                       value={colorByRow[row.id] ?? ""}
@@ -410,7 +434,7 @@ export function MatchForm({
                       required
                       className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
                     >
-                      <option value="">색상 선택</option>
+                      <option value="">{dict.selectColor}</option>
                       {colorOptionsForRow(row.id).map((c) => (
                         <option key={c.value} value={c.value}>
                           {c.labelKo}
@@ -454,7 +478,7 @@ export function MatchForm({
                       htmlFor={`${formId}-score-${row.id}`}
                       className="text-xs text-zinc-400"
                     >
-                      점수
+                      {dict.score}
                     </label>
                     <input
                       id={`${formId}-score-${row.id}`}
@@ -474,7 +498,7 @@ export function MatchForm({
                       onClick={() => removePlayer(row.id)}
                       className="ml-auto text-xs text-zinc-500 hover:text-red-400"
                     >
-                      삭제
+                      {dict.remove}
                     </button>
                   </div>
                 )}
@@ -514,7 +538,7 @@ export function MatchForm({
         disabled={pending}
         className="w-full rounded-md bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {pending ? "저장 중..." : "매치 저장"}
+        {pending ? dict.saving : dict.save}
       </button>
     </form>
   );

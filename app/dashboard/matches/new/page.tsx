@@ -3,6 +3,9 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getGameCapability } from "@/lib/domain/capabilities";
 import { Badge } from "@/components/badge";
+import { getLocale } from "@/lib/i18n/get-locale";
+import { getDictionary } from "@/lib/i18n/dictionary";
+import { pickLocalized } from "@/lib/i18n/config";
 
 const GAME_ART: Record<string, string> = {
   "dune-imperium": "/games/dune-imperium.jpg",
@@ -11,6 +14,8 @@ const GAME_ART: Record<string, string> = {
 
 export default async function NewMatchGamePage() {
   const supabase = await createClient();
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
   const { data: games, error } = await supabase
     .from("games")
     .select("id, slug, name_ko, name_en")
@@ -23,10 +28,10 @@ export default async function NewMatchGamePage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-50">새 매치 기록</h1>
-        <p className="mt-1 text-sm text-zinc-400">
-          먼저 플레이한 게임을 선택하세요.
-        </p>
+        <h1 className="text-2xl font-semibold text-zinc-50">
+          {dict.newMatch.title}
+        </h1>
+        <p className="mt-1 text-sm text-zinc-400">{dict.newMatch.subtitle}</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -41,10 +46,10 @@ export default async function NewMatchGamePage() {
                 className="relative flex aspect-[4/3] flex-col justify-end gap-1 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/30 p-6 opacity-60"
               >
                 <span className="relative z-10 text-lg font-medium text-zinc-300">
-                  {game.name_ko}
+                  {pickLocalized(locale, game.name_ko, game.name_en)}
                 </span>
                 <span className="relative z-10">
-                  <Badge>준비 중</Badge>
+                  <Badge>{dict.dashboard.comingSoon}</Badge>
                 </span>
               </div>
             );
