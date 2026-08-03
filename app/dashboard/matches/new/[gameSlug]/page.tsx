@@ -30,7 +30,7 @@ export default async function NewMatchGameFormPage({
   const [
     { data: expansions, error: expansionsError },
     factionsResult,
-    { data: playerNames, error: playerNamesError },
+    { data: profile, error: profileError },
   ] = await Promise.all([
     supabase
       .from("expansions")
@@ -46,12 +46,14 @@ export default async function NewMatchGameFormPage({
           .eq("game_id", game.id)
           .order("group_slug")
       : Promise.resolve({ data: [], error: null }),
-    supabase.from("player_names").select("name").order("created_at"),
+    supabase.from("profiles").select("display_name").maybeSingle(),
   ]);
 
-  if (expansionsError || factionsResult.error || playerNamesError) {
+  if (expansionsError || factionsResult.error || profileError) {
     throw new Error("게임 확장팩 정보를 불러오지 못했습니다.");
   }
+
+  const myNames = profile?.display_name ? [profile.display_name] : [];
 
   return (
     <div className="space-y-8">
@@ -69,7 +71,7 @@ export default async function NewMatchGameFormPage({
         expansions={expansions ?? []}
         factions={factionsResult.data ?? []}
         capability={capability}
-        myNames={(playerNames ?? []).map((n) => n.name)}
+        myNames={myNames}
       />
     </div>
   );

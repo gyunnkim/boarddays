@@ -113,17 +113,18 @@ export async function createMatch(
     return { error: "플레이어 정보를 다시 확인해 주세요." };
   }
 
-  const { data: myNames, error: myNamesError } = await supabase
-    .from("player_names")
-    .select("name")
-    .eq("user_id", user.id);
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", user.id)
+    .single();
 
-  if (myNamesError) {
+  if (profileError) {
     return { error: "내 이름 정보를 불러오지 못했습니다." };
   }
 
-  const myNameSet = new Set(myNames.map((n) => n.name));
-  const meMatches = players.filter((p) => myNameSet.has(p.name));
+  const myName = profile.display_name;
+  const meMatches = myName ? players.filter((p) => p.name === myName) : [];
   if (meMatches.length > 1) {
     return {
       error: "\"나\"로 등록된 이름을 가진 플레이어가 여러 명입니다. 이름을 확인해 주세요.",

@@ -73,3 +73,23 @@ export async function signOut() {
   await supabase.auth.signOut();
   redirect("/login");
 }
+
+/**
+ * 회원가입/로그인 없이 익명(게스트) 세션으로 입장한다.
+ * Supabase Auth의 익명 로그인은 실제 auth.users row와 세션을 만들기
+ * 때문에 `auth.uid()` 기반 RLS 정책을 그대로 재사용할 수 있다.
+ * (Supabase 프로젝트 설정에서 Anonymous sign-ins가 활성화되어 있어야
+ * 동작한다: Authentication > Settings > User Signups.)
+ */
+export async function signInAsGuest(): Promise<AuthFormState> {
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInAnonymously();
+
+  if (error) {
+    return {
+      error: "게스트로 입장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+    };
+  }
+
+  redirect("/dashboard");
+}
