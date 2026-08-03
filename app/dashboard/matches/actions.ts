@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getGameCapability } from "@/lib/domain/capabilities";
+import { getGameCapability, type GameCapability } from "@/lib/domain/capabilities";
 
 export type CreateMatchState = { error?: string } | undefined;
 
@@ -11,36 +11,84 @@ interface ParsedPlayer {
   name: string;
   score: number;
   factionId: string | null;
+  color: string | null;
+  megacredits: number | null;
+  scoreBreakdown: Record<string, number> | null;
 }
 
 function parsePlayers(
   formData: FormData,
   playerIds: string[],
-  hasFactions: boolean,
+  capability: GameCapability,
+  selectedExpansionSlugs: Set<string>,
 ): ParsedPlayer[] | null {
   const players: ParsedPlayer[] = [];
 
   for (const id of playerIds) {
     const name = formData.get(`player_name_${id}`);
-    const scoreRaw = formData.get(`player_score_${id}`);
-    const factionRaw = formData.get(`player_faction_${id}`);
-
     if (typeof name !== "string" || !name.trim()) return null;
 
-    const score = Number(scoreRaw);
-    if (!Number.isFinite(score)) return null;
-
+    const factionRaw = formData.get(`player_faction_${id}`);
     const factionId =
-      hasFactions && typeof factionRaw === "string" && factionRaw
+      capability.hasFactions && typeof factionRaw === "string" && factionRaw
         ? factionRaw
         : null;
-    if (hasFactions && !factionId) return null;
+    if (capability.hasFactions && !factionId) return null;
+
+    let color: string | null = null;
+    if (capability.playerColors) {
+      const colorRaw = formData.get(`player_color_${id}`);
+      if (
+        typeof colorRaw !== "string" ||
+        !capability.playerColors.some((c) => c.value === colorRaw)
+      ) {
+        return null;
+      }
+      color = colorRaw;
+    }
+
+    let megacredits: number | null = null;
+    if (capability.hasMegacredits) {
+      const mcRaw = formData.get(`player_mc_${id}`);
+      const mc = Number(mcRaw);
+      if (!Number.isFinite(mc)) return null;
+      megacredits = mc;
+    }
+
+    let score: number;
+    let scoreBreakdown: Record<string, number> | null = null;
+
+    if (capability.scoreComponents) {
+      const activeComponents = capability.scoreComponents.filter(
+        (c) => !c.requiresExpansionSlug || selectedExpansionSlugs.has(c.requiresExpansionSlug),
+      );
+
+      const breakdown: Record<string, number> = {};
+      let total = 0;
+      for (const component of activeComponents) {
+        const raw = formData.get(`player_score_${component.key}_${id}`);
+        const value = Number(raw);
+        if (!Number.isFinite(value)) return null;
+        breakdown[component.key] = value;
+        total += value;
+      }
+      score = total;
+      scoreBreakdown = breakdown;
+    } else {
+      const scoreRaw = formData.get(`player_score_${id}`);
+      const parsedScore = Number(scoreRaw);
+      if (!Number.isFinite(parsedScore)) return null;
+      score = parsedScore;
+    }
 
     players.push({
       id,
       name: name.trim(),
       score,
       factionId,
+      color,
+      megacredits,
+      scoreBreakdown,
     });
   }
 
@@ -108,7 +156,44 @@ export async function createMatch(
     return { error: "플레이어를 1명 이상 입력해 주세요." };
   }
 
-  const players = parsePlayers(formData, playerIds, capability.hasFactions);
+  // 클라이언트가 보낸 expansion_ids는 신뢰하지 않고, 이 게임 소속의 실제
+  // 확장팩인지 확인한 뒤 slug를 조회한다. scoreComponents/개척기지 뽑기처럼
+  // "이 확장팩이 선택됐는지"로 분기하는 로직에 사용한다.
+  let selectedExpansionSlugs = new Set<string>();
+  if (expansionIds.length > 0) {
+    const { data: expansionRows, error: expansionLookupError } = await supabase
+      .from("expansions")
+      .select("id, slug")
+      .eq("game_id", game.id)
+      .in("id", expansionIds);
+
+    if (
+      expansionLookupError ||
+      !expansionRows ||
+      expansionRows.length !== expansionIds.length
+    ) {
+      return { error: "확장팩 정보가 올바르지 않습니다." };
+    }
+    selectedExpansionSlugs = new Set(expansionRows.map((e) => e.slug));
+  }
+
+  const mapIdRaw = formData.get("terraforming_mars_map_id");
+  const mapId =
+    capability.hasMapSelection && typeof mapIdRaw === "string" && mapIdRaw
+      ? mapIdRaw
+      : null;
+  if (capability.hasMapSelection && !mapId) {
+    return { error: "맵을 선택해 주세요." };
+  }
+
+  const colonyIds = formData.getAll("colony_ids").filter(
+    (v): v is string => typeof v === "string" && v.length > 0,
+  );
+  const coloniesApply = Boolean(
+    capability.colonyDraw && selectedExpansionSlugs.has(capability.colonyDraw.expansionSlug),
+  );
+
+  const players = parsePlayers(formData, playerIds, capability, selectedExpansionSlugs);
   if (!players) {
     return { error: "플레이어 정보를 다시 확인해 주세요." };
   }
@@ -166,6 +251,29 @@ export async function createMatch(
     }
   }
 
+  // 맵은 match_expansions가 먼저 저장되어 있어야 검증할 수 있으므로(맵이
+  // 특정 확장팩 전용인 경우) 이 시점에 별도 update로 채운다.
+  if (capability.hasMapSelection && mapId) {
+    const { error: mapError } = await supabase
+      .from("matches")
+      .update({ terraforming_mars_map_id: mapId })
+      .eq("id", match.id);
+
+    if (mapError) {
+      return cleanupAndFail("맵 정보를 저장하지 못했습니다.");
+    }
+  }
+
+  if (coloniesApply && colonyIds.length > 0) {
+    const { error: coloniesError } = await supabase
+      .from("match_terraforming_mars_colonies")
+      .insert(colonyIds.map((colonyId) => ({ match_id: match.id, colony_id: colonyId })));
+
+    if (coloniesError) {
+      return cleanupAndFail("개척기지 정보를 저장하지 못했습니다.");
+    }
+  }
+
   const ranks = assignRanks(players);
 
   const { error: playersError } = await supabase.from("match_players").insert(
@@ -177,6 +285,9 @@ export async function createMatch(
       is_win: ranks.get(p.id) === 1,
       is_me: p.id === meId,
       faction_id: p.factionId,
+      color: p.color,
+      megacredits: p.megacredits,
+      score_breakdown: p.scoreBreakdown,
     })),
   );
 
