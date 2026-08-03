@@ -2,6 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/app/(auth)/actions";
+import { getLocale } from "@/lib/i18n/get-locale";
+import { getDictionary } from "@/lib/i18n/dictionary";
+import { LocaleToggle } from "@/components/locale-toggle";
 
 export default async function DashboardLayout({
   children,
@@ -18,6 +21,9 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
+
   return (
     <div className="flex min-h-full flex-1 flex-col">
       <header className="flex items-center justify-between border-b border-zinc-800 px-6 py-4">
@@ -28,18 +34,19 @@ export default async function DashboardLayout({
           boarddays
         </Link>
         <div className="flex items-center gap-4">
+          <LocaleToggle locale={locale} />
           <Link
             href="/dashboard/settings"
             className="text-sm text-zinc-400 transition-colors hover:text-zinc-100"
           >
-            설정
+            {dict.header.settings}
           </Link>
           <form action={signOut}>
             <button
               type="submit"
               className="text-sm text-zinc-400 transition-colors hover:text-zinc-100"
             >
-              로그아웃
+              {dict.header.logout}
             </button>
           </form>
         </div>

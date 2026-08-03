@@ -2,6 +2,9 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getGameCapability } from "@/lib/domain/capabilities";
 import { MatchForm } from "./match-form";
+import { getLocale } from "@/lib/i18n/get-locale";
+import { getDictionary } from "@/lib/i18n/dictionary";
+import { pickLocalized } from "@/lib/i18n/config";
 
 export default async function NewMatchGameFormPage({
   params,
@@ -16,6 +19,8 @@ export default async function NewMatchGameFormPage({
   }
 
   const supabase = await createClient();
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
 
   const { data: game, error: gameError } = await supabase
     .from("games")
@@ -106,11 +111,9 @@ export default async function NewMatchGameFormPage({
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-semibold text-zinc-50">
-          {game.name_ko}
+          {pickLocalized(locale, game.name_ko, game.name_en)}
         </h1>
-        <p className="mt-1 text-sm text-zinc-400">
-          사용한 확장팩과 플레이어별 결과를 입력하세요.
-        </p>
+        <p className="mt-1 text-sm text-zinc-400">{dict.newMatch.fillHint}</p>
       </div>
 
       <MatchForm
@@ -122,6 +125,8 @@ export default async function NewMatchGameFormPage({
         capability={capability}
         myNames={myNames}
         defaultExpansionIds={defaultExpansionIds}
+        locale={locale}
+        dict={dict.matchForm}
       />
     </div>
   );
