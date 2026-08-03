@@ -240,10 +240,10 @@ export default async function DashboardPage({
                       player.rank;
                     const myRankTone = player.isMe
                       ? player.rank === 1
-                        ? "rounded-md bg-sky-500/20 px-2 py-0.5"
+                        ? "bg-sky-500/20"
                         : player.rank === lastRank
-                          ? "rounded-md bg-red-500/20 px-2 py-0.5"
-                          : "rounded-md bg-yellow-500/20 px-2 py-0.5"
+                          ? "bg-red-500/20"
+                          : "bg-yellow-500/20"
                       : "";
 
                     return (
@@ -251,7 +251,7 @@ export default async function DashboardPage({
                         key={`${entry.matchId}-${index}-${player.name}`}
                         className={
                           player.isMe
-                            ? `flex items-center gap-1.5 font-medium text-zinc-50 ${myRankTone}`
+                            ? `flex w-full items-center gap-1.5 rounded-md px-2 py-1 font-medium text-zinc-50 ${myRankTone}`
                             : "flex items-center gap-1.5 text-zinc-400"
                         }
                       >
