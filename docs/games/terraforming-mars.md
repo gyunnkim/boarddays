@@ -29,17 +29,25 @@ boarddays는 KR/EN 2개 국어를 지원할 예정이므로, 이 문서의 표�
 
 ## 확장팩 / 옵션이 매치 설정에 미치는 영향
 
+표는 매치 입력 화면에 표시되는 순서(사용자 확정)대로 정렬되어 있다. 실제
+정렬은 `expansions.sort_order` 컬럼 값을 따른다
+(`20260801100013_expansion_sort_order.sql`).
+
 | 표시명(KR)          | Display name (EN)            | slug                | 매치 설정 영향                                                        |
 | ------------------- | ----------------------------- | -------------------- | ---------------------------------------------------------------------- |
 | 헬라스 & 엘리시움    | Hellas & Elysium               | hellas-elysium        | 맵 선택지에 HELLAS, ELYSIUM 추가                                        |
 | 비너스 넥스트        | Venus Next                     | venus-next             | 기업 5종 추가: Aphrodite, Celectic, Manutech, MSI, Viron                |
 | 서곡                | Prelude                        | prelude                | 기업 5종 추가: Cheung Shing Mars, Point Luna, Robinson Industries, Valley Trust, VITOR |
-| 개척기지            | Colonies                       | colonies               | 기업 5종 추가: Arklight, Aridor, Polyphemos, Poseidon, Stormcraft. 매치 설정에 "개척기지 뽑기" 단계 추가 |
+| 개척기지            | Colonies                       | colonies               | 기업 5종 추가: Arklight, Aridor, Polyphemos, Poseidon, Stormcraft. 매치 설정에 "개척기지 뽑기" 단계 추가 (아래 [개척기지 목록](#개척기지-확정) 참고) |
 | 격동                | Turmoil                        | turmoil                | 기업 5종 추가: Lakefront Resorts, Pristar, Septem Tribus, Terralabs, Utopia Invest. 점수 계산에 "의회" 항목 포함 |
+| 서곡 2              | Prelude 2                      | prelude-2              | 기업 5종 추가: Ecotec, Nirgal Enterprises, Palladin Shipping, Sagitta Frontier Services, Spire |
 | 아마조니스 & 보레알리스 | Amazonis Planitia & Vastitas Borealis | amazonis-borealis | 맵 선택지에 AMAZONIS PLANITIA, VASTITAS BOREALIS 추가                  |
 | 유토피아 & 킴메리아  | Utopia Planitia & Terra Cimmeria | utopia-kimmeria     | 맵 선택지에 UTOPIA PLANITIA, TERRA CIMMERIA 추가                        |
-| 업적과 기업상        | Awards & Milestones            | awards-milestones      | 확인 필요 — 기본 점수식에 이미 업적/기업상 항목이 있어, 이 확장이 추가 타일만 늘리는 것인지 재확인 필요 |
-| 서곡 2              | Prelude 2                      | prelude-2              | 기업 5종 추가: Ecotec, Nirgal Enterprises, Palladin Shipping, Sagitta Frontier Services, Spire |
+
+"업적과 기업상"(Awards & Milestones)은 정식 확장 카탈로그에서 제외했다
+(사용자 확인 완료). 기본 점수 계산식에 이미 업적(Milestones)/기업상(Awards)
+항목이 포함되어 있고, 이 확장은 기업이나 맵을 추가하지 않아 매치 설정에
+별도로 필요한 것이 없기 때문이다 (`20260801100014_remove_awards_milestones_expansion.sql`).
 
 ### 확장 카탈로그에 아직 없는 추가 옵션 (확인 필요)
 
@@ -62,6 +70,17 @@ boarddays는 KR/EN 2개 국어를 지원할 예정이므로, 이 문서의 표�
 
 Credicor, Ecoline, Helion, Interplanetary Cinematics, Inventrix, Mining Guild,
 Phoblog, Tharsis Republic, Thorgate, UNMI
+
+## 개척기지 (확정)
+
+개척기지(Colonies) 확장의 실물 확장 타일 12종을 그대로 카탈로그로 사용한다
+(`terraforming_mars_colonies` 테이블, `20260801100015_seed_terraforming_mars_colonies.sql`).
+매치에서는 이 12종 중 (플레이어 명수 + 2)개를 무작위로 뽑아 기록한다
+(뽑기 결과를 점수 계산에 자동 반영하지는 않는다 — 아래 TODO 참고).
+
+칼리스토(Callisto), 세레스(Ceres), 엔켈라두스(Enceladus), 유로파(Europa),
+가니메데(Ganymede), 이오(Io), 루나(Luna), 미란다(Miranda), 플루토(Pluto),
+타이탄(Titan), 티타니아(Titania), 트리톤(Triton)
 
 ## 매치 입력 필드 (확정)
 
@@ -93,17 +112,22 @@ Phoblog, Tharsis Republic, Thorgate, UNMI
 ## 순위 / 승패
 
 - 최종 점수가 가장 높은 플레이어가 승리
-- 동점 처리 규칙은 확인 필요
+- 동점 처리(확정): 최종 점수가 같으면 메가크레딧(MC)이 더 높은 플레이어가
+  더 높은 순위를 받는다. 점수와 MC가 모두 같으면 표준 경쟁 순위(1224
+  방식)에 따라 공동 순위를 받는다. MC 값이 없는 게임(듄/SETI)에는 이
+  타이브레이커가 적용되지 않고 점수만으로 동점을 판단하는 기존 중립 로직이
+  그대로 유지된다 (`app/dashboard/matches/actions.ts`의 `assignRanks`).
 
 ## TODO / 확인 필요
 
 - Corporate Era, Promos를 `expansions` 카탈로그에 정식 포함할지 여부와 slug 확정
-- 업적과 기업상(Awards & Milestones) 확장이 정확히 무엇을 추가하는지 재확인
-  (기본 점수식에 이미 업적/기업상 항목이 존재)
 - 기업 영문 표기 최종 확인 (카드 실물과 표기가 다를 수 있음)
-- "드루이드" 필드의 내부 키 이름과 UI 노출 방식
-- 동점 처리 규칙
-- 개척기지 뽑기 결과(무역 수입 등)를 점수 계산에 반영할지 여부
+- "드루이드" 필드의 내부 키 이름과 UI 노출 방식: 현재
+  `lib/domain/capabilities.ts`에 임시 영문 키 `card_resource_score`로
+  구현되어 있다. 정식 룰 용어가 아니므로 이 키 이름 자체는 여전히 확인
+  필요 상태다.
+- 개척기지 뽑기 결과(무역 수입 등)를 점수 계산에 반영할지 여부 — 현재는
+  뽑기 결과를 기록만 하고 점수식에는 반영하지 않는다.
 - KR/EN 표시명을 어디에 저장할지 (games/expansions 테이블에 로케일 컬럼을
   둘지, 별도 i18n 리소스로 둘지)
 

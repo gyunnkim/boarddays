@@ -96,17 +96,38 @@ function parsePlayers(
 }
 
 /**
- * 점수 내림차순 표준 경쟁 순위(1224 방식): 동점자는 같은 순위를 받고,
- * 다음 순위는 동점자 수만큼 건너뛴다. 동점 처리 규칙 자체는 게임별로
- * 아직 확인되지 않았으므로(각 docs/games/*.md 참고) 특정 게임 룰을
- * 가정하지 않는 중립적인 방식만 사용한다.
+ * 두 플레이어가 같은 순위를 받아야 하는지(완전히 동점인지) 판단한다.
+ * 점수가 다르면 항상 동점이 아니다. 점수가 같을 때, 둘 다 megacredits(MC)
+ * 값을 가진 게임(테라포밍 마스)이면 MC까지 같아야 동점으로 본다 — 테라포밍
+ * 마스는 "점수가 같으면 MC가 높은 쪽이 승리"로 동점 처리 규칙이 확정되었다
+ * (docs/games/terraforming-mars.md). MC가 없는 게임(듄/SETI)은
+ * megacredits가 항상 null이라 이 비교가 적용되지 않고, 기존처럼 점수만으로
+ * 동점을 판단하는 중립적인 방식이 그대로 유지된다.
+ */
+function isTie(a: ParsedPlayer, b: ParsedPlayer): boolean {
+  if (a.score !== b.score) return false;
+  if (a.megacredits !== null && b.megacredits !== null) {
+    return a.megacredits === b.megacredits;
+  }
+  return true;
+}
+
+/**
+ * 점수(그리고 필요 시 megacredits) 내림차순 표준 경쟁 순위(1224 방식):
+ * 동점자는 같은 순위를 받고, 다음 순위는 동점자 수만큼 건너뛴다.
  */
 function assignRanks(players: ParsedPlayer[]): Map<string, number> {
-  const sorted = [...players].sort((a, b) => b.score - a.score);
+  const sorted = [...players].sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    if (a.megacredits !== null && b.megacredits !== null) {
+      return b.megacredits - a.megacredits;
+    }
+    return 0;
+  });
   const ranks = new Map<string, number>();
 
   sorted.forEach((player, index) => {
-    if (index > 0 && sorted[index - 1].score === player.score) {
+    if (index > 0 && isTie(sorted[index - 1], player)) {
       ranks.set(player.id, ranks.get(sorted[index - 1].id)!);
     } else {
       ranks.set(player.id, index + 1);
@@ -223,6 +244,13 @@ export async function createMatch(
       return {
         error: `같은 ${capability.factionLabel ?? "진영"}을 두 명 이상 선택할 수 없습니다.`,
       };
+    }
+  }
+
+  if (capability.playerColors) {
+    const colors = players.map((p) => p.color);
+    if (new Set(colors).size !== colors.length) {
+      return { error: "같은 색상을 두 명 이상 선택할 수 없습니다." };
     }
   }
 
