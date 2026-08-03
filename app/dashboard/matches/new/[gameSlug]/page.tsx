@@ -39,6 +39,7 @@ export default async function NewMatchGameFormPage({
       .from("expansions")
       .select("id, slug, name_ko, name_en")
       .eq("game_id", game.id)
+      .order("sort_order", { ascending: true, nullsFirst: false })
       .order("slug"),
     capability.hasFactions
       ? supabase

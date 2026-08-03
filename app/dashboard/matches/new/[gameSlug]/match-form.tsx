@@ -188,6 +188,16 @@ export function MatchForm({
     return availableFactions.filter((f) => !takenByOthers.has(f.id));
   }
 
+  function colorOptionsForRow(rowId: string) {
+    if (!capability.playerColors) return [];
+    const takenByOthers = new Set(
+      Object.entries(colorByRow)
+        .filter(([otherId]) => otherId !== rowId)
+        .map(([, color]) => color),
+    );
+    return capability.playerColors.filter((c) => !takenByOthers.has(c.value));
+  }
+
   function renderFactionSelect(rowId: string) {
     const options = factionOptionsForRow(rowId);
     const groups = new Map<string, { label: string; options: FactionOption[] }>();
@@ -401,7 +411,7 @@ export function MatchForm({
                       className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
                     >
                       <option value="">색상 선택</option>
-                      {capability.playerColors.map((c) => (
+                      {colorOptionsForRow(row.id).map((c) => (
                         <option key={c.value} value={c.value}>
                           {c.labelKo}
                         </option>
