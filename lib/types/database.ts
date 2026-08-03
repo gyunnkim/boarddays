@@ -121,6 +121,7 @@ export interface Database {
           user_id: string;
           game_id: string;
           played_at: string;
+          terraforming_mars_map_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -129,6 +130,7 @@ export interface Database {
           user_id: string;
           game_id: string;
           played_at?: string;
+          terraforming_mars_map_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -137,6 +139,7 @@ export interface Database {
           user_id?: string;
           game_id?: string;
           played_at?: string;
+          terraforming_mars_map_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -152,6 +155,9 @@ export interface Database {
           is_win: boolean;
           is_me: boolean;
           faction_id: string | null;
+          color: string | null;
+          megacredits: number | null;
+          score_breakdown: Record<string, number> | null;
           created_at: string;
         };
         Insert: {
@@ -163,6 +169,9 @@ export interface Database {
           is_win?: boolean;
           is_me?: boolean;
           faction_id?: string | null;
+          color?: string | null;
+          megacredits?: number | null;
+          score_breakdown?: Record<string, number> | null;
           created_at?: string;
         };
         Update: {
@@ -174,6 +183,9 @@ export interface Database {
           is_win?: boolean;
           is_me?: boolean;
           faction_id?: string | null;
+          color?: string | null;
+          megacredits?: number | null;
+          score_breakdown?: Record<string, number> | null;
           created_at?: string;
         };
         Relationships: [];
@@ -190,6 +202,72 @@ export interface Database {
         Update: {
           match_id?: string;
           expansion_id?: string;
+        };
+        Relationships: [];
+      };
+      terraforming_mars_maps: {
+        Row: {
+          id: string;
+          expansion_id: string | null;
+          slug: string;
+          name_ko: string;
+          name_en: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          expansion_id?: string | null;
+          slug: string;
+          name_ko: string;
+          name_en: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          expansion_id?: string | null;
+          slug?: string;
+          name_ko?: string;
+          name_en?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      terraforming_mars_colonies: {
+        Row: {
+          id: string;
+          slug: string;
+          name_ko: string;
+          name_en: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          name_ko: string;
+          name_en: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          slug?: string;
+          name_ko?: string;
+          name_en?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      match_terraforming_mars_colonies: {
+        Row: {
+          match_id: string;
+          colony_id: string;
+        };
+        Insert: {
+          match_id: string;
+          colony_id: string;
+        };
+        Update: {
+          match_id?: string;
+          colony_id?: string;
         };
         Relationships: [];
       };

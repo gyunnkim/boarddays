@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useId, useState } from "react";
+import { useActionState, useId, useMemo, useState } from "react";
 import { createMatch } from "../../actions";
 import type { GameCapability } from "@/lib/domain/capabilities";
 
@@ -29,6 +29,21 @@ interface FactionOption {
   name_en: string;
 }
 
+interface MapOption {
+  id: string;
+  expansion_id: string | null;
+  slug: string;
+  name_ko: string;
+  name_en: string;
+}
+
+interface ColonyOption {
+  id: string;
+  slug: string;
+  name_ko: string;
+  name_en: string;
+}
+
 interface PlayerRow {
   id: string;
 }
@@ -43,20 +58,28 @@ export function MatchForm({
   game,
   expansions,
   factions,
+  maps,
+  colonies,
   capability,
   myNames,
+  defaultExpansionIds,
 }: {
   game: GameOption;
   expansions: ExpansionOption[];
   factions: FactionOption[];
+  maps: MapOption[];
+  colonies: ColonyOption[];
   capability: GameCapability;
   myNames: string[];
+  defaultExpansionIds: string[];
 }) {
   const [state, action, pending] = useActionState(createMatch, undefined);
   const formId = useId();
   const nameListId = `${formId}-my-names`;
 
-  const [expansionIds, setExpansionIds] = useState<string[]>([]);
+  const [expansionIds, setExpansionIds] = useState<string[]>(
+    () => defaultExpansionIds,
+  );
   const [players, setPlayers] = useState<PlayerRow[]>(() => [
     { id: nextRowId() },
     { id: nextRowId() },
@@ -64,6 +87,9 @@ export function MatchForm({
   const [factionByRow, setFactionByRow] = useState<Record<string, string>>(
     {},
   );
+  const [colorByRow, setColorByRow] = useState<Record<string, string>>({});
+  const [mapId, setMapId] = useState<string | null>(null);
+  const [drawnColonyIds, setDrawnColonyIds] = useState<string[]>([]);
 
   const availableFactions = factions.filter(
     (f) => f.expansion_id === null || expansionIds.includes(f.expansion_id),
@@ -77,6 +103,36 @@ export function MatchForm({
       effectiveFactionByRow[rowId] = factionId;
     }
   }
+
+  const selectedExpansionSlugs = useMemo(
+    () =>
+      new Set(
+        expansions
+          .filter((e) => expansionIds.includes(e.id))
+          .map((e) => e.slug),
+      ),
+    [expansions, expansionIds],
+  );
+
+  const activeScoreComponents = (capability.scoreComponents ?? []).filter(
+    (c) => !c.requiresExpansionSlug || selectedExpansionSlugs.has(c.requiresExpansionSlug),
+  );
+
+  const availableMaps = maps.filter(
+    (m) => m.expansion_id === null || expansionIds.includes(m.expansion_id),
+  );
+  const effectiveMapId = availableMaps.some((m) => m.id === mapId)
+    ? mapId
+    : null;
+
+  const colonyExpansion = capability.colonyDraw
+    ? expansions.find((e) => e.slug === capability.colonyDraw!.expansionSlug)
+    : undefined;
+  const coloniesEnabled = Boolean(
+    colonyExpansion && expansionIds.includes(colonyExpansion.id),
+  );
+  const effectiveDrawnColonyIds = coloniesEnabled ? drawnColonyIds : [];
+  const colonyById = new Map(colonies.map((c) => [c.id, c]));
 
   function toggleExpansion(id: string) {
     setExpansionIds((prev) =>
@@ -99,6 +155,28 @@ export function MatchForm({
       delete next[id];
       return next;
     });
+    setColorByRow((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  }
+
+  function selectRandomMap() {
+    if (availableMaps.length === 0) return;
+    const random =
+      availableMaps[Math.floor(Math.random() * availableMaps.length)];
+    setMapId(random.id);
+  }
+
+  function drawColonies() {
+    if (colonies.length === 0 || !capability.colonyDraw) return;
+    const count = Math.min(
+      colonies.length,
+      players.length + capability.colonyDraw.countOffset,
+    );
+    const shuffled = [...colonies].sort(() => Math.random() - 0.5);
+    setDrawnColonyIds(shuffled.slice(0, count).map((c) => c.id));
   }
 
   function factionOptionsForRow(rowId: string) {
@@ -198,6 +276,73 @@ export function MatchForm({
         </fieldset>
       )}
 
+      {capability.hasMapSelection && (
+        <fieldset className="space-y-3">
+          <legend className="text-sm font-medium text-zinc-200">맵</legend>
+          <div className="flex flex-wrap items-center gap-3">
+            <select
+              name="terraforming_mars_map_id"
+              value={effectiveMapId ?? ""}
+              onChange={(e) => setMapId(e.target.value)}
+              required
+              className="rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
+            >
+              <option value="">맵 선택</option>
+              {availableMaps.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name_ko}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={selectRandomMap}
+              className="rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-200 transition-colors hover:bg-zinc-800"
+            >
+              랜덤 선택
+            </button>
+          </div>
+        </fieldset>
+      )}
+
+      {capability.colonyDraw && coloniesEnabled && (
+        <fieldset className="space-y-3">
+          <legend className="text-sm font-medium text-zinc-200">
+            개척기지
+          </legend>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={drawColonies}
+              disabled={colonies.length === 0}
+              className="rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-200 transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              개척기지 뽑기 ({players.length + capability.colonyDraw.countOffset}개)
+            </button>
+            {colonies.length === 0 && (
+              <span className="text-xs text-zinc-500">
+                등록된 개척기지 카탈로그가 아직 없습니다.
+              </span>
+            )}
+          </div>
+          {effectiveDrawnColonyIds.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {effectiveDrawnColonyIds.map((id) => (
+                <span
+                  key={id}
+                  className="rounded-md border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-xs text-zinc-200"
+                >
+                  {colonyById.get(id)?.name_ko ?? id}
+                </span>
+              ))}
+            </div>
+          )}
+          {effectiveDrawnColonyIds.map((id) => (
+            <input key={id} type="hidden" name="colony_ids" value={id} />
+          ))}
+        </fieldset>
+      )}
+
       <fieldset className="space-y-4">
         <div className="flex items-center justify-between">
           <legend className="text-sm font-medium text-zinc-200">
@@ -216,64 +361,135 @@ export function MatchForm({
           {players.map((row, index) => (
             <div
               key={row.id}
-              className="grid grid-cols-1 gap-3 rounded-lg border border-zinc-800 p-4 sm:grid-cols-2 lg:grid-cols-5"
+              className="space-y-3 rounded-lg border border-zinc-800 p-4"
             >
               <input type="hidden" name="player_ids" value={row.id} />
 
-              <div className="lg:col-span-2 space-y-1">
-                <label
-                  htmlFor={`${formId}-name-${row.id}`}
-                  className="text-xs text-zinc-400"
-                >
-                  이름
-                </label>
-                <input
-                  id={`${formId}-name-${row.id}`}
-                  name={`player_name_${row.id}`}
-                  type="text"
-                  list={nameListId}
-                  required
-                  defaultValue={index === 0 ? myNames[0] : undefined}
-                  placeholder="이름을 선택하거나 입력하세요"
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label
-                  htmlFor={`${formId}-score-${row.id}`}
-                  className="text-xs text-zinc-400"
-                >
-                  점수
-                </label>
-                <input
-                  id={`${formId}-score-${row.id}`}
-                  name={`player_score_${row.id}`}
-                  type="number"
-                  step="1"
-                  required
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
-                />
-              </div>
-
-              {capability.hasFactions && (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
                 <div className="lg:col-span-2 space-y-1">
-                  <label className="text-xs text-zinc-400">
-                    {capability.factionLabel ?? "진영"}
-                  </label>
-                  {renderFactionSelect(row.id)}
-                </div>
-              )}
-
-              {players.length > 1 && (
-                <div className="flex items-end">
-                  <button
-                    type="button"
-                    onClick={() => removePlayer(row.id)}
-                    className="ml-auto text-xs text-zinc-500 hover:text-red-400"
+                  <label
+                    htmlFor={`${formId}-name-${row.id}`}
+                    className="text-xs text-zinc-400"
                   >
-                    삭제
-                  </button>
+                    이름
+                  </label>
+                  <input
+                    id={`${formId}-name-${row.id}`}
+                    name={`player_name_${row.id}`}
+                    type="text"
+                    list={nameListId}
+                    required
+                    defaultValue={index === 0 ? myNames[0] : undefined}
+                    placeholder="이름을 선택하거나 입력하세요"
+                    className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
+                  />
+                </div>
+
+                {capability.playerColors && (
+                  <div className="space-y-1">
+                    <label className="text-xs text-zinc-400">색상</label>
+                    <select
+                      name={`player_color_${row.id}`}
+                      value={colorByRow[row.id] ?? ""}
+                      onChange={(e) =>
+                        setColorByRow((prev) => ({
+                          ...prev,
+                          [row.id]: e.target.value,
+                        }))
+                      }
+                      required
+                      className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
+                    >
+                      <option value="">색상 선택</option>
+                      {capability.playerColors.map((c) => (
+                        <option key={c.value} value={c.value}>
+                          {c.labelKo}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {capability.hasFactions && (
+                  <div className="lg:col-span-2 space-y-1">
+                    <label className="text-xs text-zinc-400">
+                      {capability.factionLabel ?? "진영"}
+                    </label>
+                    {renderFactionSelect(row.id)}
+                  </div>
+                )}
+
+                {capability.hasMegacredits && (
+                  <div className="space-y-1">
+                    <label
+                      htmlFor={`${formId}-mc-${row.id}`}
+                      className="text-xs text-zinc-400"
+                    >
+                      {capability.megacreditsLabel ?? "메가크레딧"}
+                    </label>
+                    <input
+                      id={`${formId}-mc-${row.id}`}
+                      name={`player_mc_${row.id}`}
+                      type="number"
+                      step="1"
+                      required
+                      className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
+                    />
+                  </div>
+                )}
+
+                {!capability.scoreComponents && (
+                  <div className="space-y-1">
+                    <label
+                      htmlFor={`${formId}-score-${row.id}`}
+                      className="text-xs text-zinc-400"
+                    >
+                      점수
+                    </label>
+                    <input
+                      id={`${formId}-score-${row.id}`}
+                      name={`player_score_${row.id}`}
+                      type="number"
+                      step="1"
+                      required
+                      className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
+                    />
+                  </div>
+                )}
+
+                {players.length > 1 && (
+                  <div className="flex items-end">
+                    <button
+                      type="button"
+                      onClick={() => removePlayer(row.id)}
+                      className="ml-auto text-xs text-zinc-500 hover:text-red-400"
+                    >
+                      삭제
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {capability.scoreComponents && (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  {activeScoreComponents.map((component) => (
+                    <div key={component.key} className="space-y-1">
+                      <label
+                        htmlFor={`${formId}-${component.key}-${row.id}`}
+                        className="text-xs text-zinc-400"
+                      >
+                        {component.labelKo}
+                      </label>
+                      <input
+                        id={`${formId}-${component.key}-${row.id}`}
+                        name={`player_score_${component.key}_${row.id}`}
+                        type="number"
+                        step="1"
+                        required
+                        className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
+                      />
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
