@@ -234,35 +234,48 @@ export default async function DashboardPage({
                   </span>
                 </div>
                 <ul className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
-                  {entry.players.map((player, index) => (
-                    <li
-                      key={`${entry.matchId}-${index}-${player.name}`}
-                      className={
-                        player.isMe
-                          ? "flex items-center gap-1.5 font-medium text-zinc-50"
-                          : "flex items-center gap-1.5 text-zinc-400"
-                      }
-                    >
-                      <span
+                  {entry.players.map((player, index) => {
+                    const lastRank =
+                      entry.players[entry.players.length - 1]?.rank ??
+                      player.rank;
+                    const myRankTone = player.isMe
+                      ? player.rank === 1
+                        ? "rounded-md bg-sky-500/20 px-2 py-0.5"
+                        : player.rank === lastRank
+                          ? "rounded-md bg-red-500/20 px-2 py-0.5"
+                          : "rounded-md bg-yellow-500/20 px-2 py-0.5"
+                      : "";
+
+                    return (
+                      <li
+                        key={`${entry.matchId}-${index}-${player.name}`}
                         className={
-                          player.isWin ? "text-emerald-400" : "text-zinc-500"
+                          player.isMe
+                            ? `flex items-center gap-1.5 font-medium text-zinc-50 ${myRankTone}`
+                            : "flex items-center gap-1.5 text-zinc-400"
                         }
                       >
-                        {formatTemplate(dict.dashboard.rankTemplate, {
-                          n: player.rank,
-                        })}
-                      </span>
-                      <span>{player.name}</span>
-                      <span>
-                        {formatTemplate(dict.dashboard.scoreTemplate, {
-                          n: player.score,
-                        })}
-                      </span>
-                      {player.isMe && (
-                        <Badge>{dict.dashboard.you}</Badge>
-                      )}
-                    </li>
-                  ))}
+                        <span
+                          className={
+                            player.isWin ? "text-emerald-400" : "text-zinc-500"
+                          }
+                        >
+                          {formatTemplate(dict.dashboard.rankTemplate, {
+                            n: player.rank,
+                          })}
+                        </span>
+                        <span>{player.name}</span>
+                        <span>
+                          {formatTemplate(dict.dashboard.scoreTemplate, {
+                            n: player.score,
+                          })}
+                        </span>
+                        {player.isMe && (
+                          <Badge>{dict.dashboard.you}</Badge>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </li>
             ))}

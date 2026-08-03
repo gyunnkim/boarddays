@@ -8,8 +8,9 @@ import { getDictionary } from "@/lib/i18n/dictionary";
 import { pickLocalized } from "@/lib/i18n/config";
 
 const GAME_ART: Record<string, string> = {
-  "dune-imperium": "/games/dune-imperium.jpg",
-  seti: "/games/seti.jpg",
+  "dune-imperium": "/games/dune.jpeg",
+  seti: "/games/seti.jpeg",
+  "terraforming-mars": "/games/tfm.jpeg",
 };
 
 export default async function NewMatchGamePage() {
