@@ -52,6 +52,11 @@ export function MatchHistoryList({
                       {pickLocalized(locale, expansion.nameKo, expansion.nameEn)}
                     </Badge>
                   ))}
+                  {entry.map && (
+                    <Badge>
+                      {pickLocalized(locale, entry.map.nameKo, entry.map.nameEn)}
+                    </Badge>
+                  )}
                 </div>
                 <span className="text-xs text-stone-500">
                   {formatDate(entry.playedAt)}
@@ -77,6 +82,17 @@ export function MatchHistoryList({
                       })}
                     </span>
                     <span>{player.name}</span>
+                    {player.faction && (
+                      <span className="text-xs text-stone-500">
+                        (
+                        {pickLocalized(
+                          locale,
+                          player.faction.nameKo,
+                          player.faction.nameEn,
+                        )}
+                        )
+                      </span>
+                    )}
                     <span>
                       {formatTemplate(dict.dashboard.scoreTemplate, {
                         n: player.score,

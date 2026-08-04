@@ -39,6 +39,8 @@ export default async function DashboardPage({
     { data: matchPlayers, error: matchPlayersError },
     { data: matchExpansions, error: matchExpansionsError },
     { data: expansions, error: expansionsError },
+    { data: terraformingMarsMaps, error: terraformingMarsMapsError },
+    { data: playerFactions, error: playerFactionsError },
     { data: viewerProfile, error: viewerProfileError },
   ] = await runWithAuthRetry(() =>
     Promise.all([
@@ -46,16 +48,20 @@ export default async function DashboardPage({
       // RLS(matches_select_owner_or_name_match 경유)가 본인 소유 매치뿐
       // 아니라, 로그인한 사용자의 표시 이름과 같은 이름의 플레이어가 등장하는
       // 매치도 함께 노출한다.
-      supabase.from("matches").select("id, game_id, played_at"),
+      supabase
+        .from("matches")
+        .select("id, game_id, played_at, created_at, terraforming_mars_map_id"),
       // 마찬가지로 match_players도 소유 매치 또는 이름이 일치하는 매치의
       // 플레이어를 모두 가져온다. is_me는 매치를 "기록한" 사람 기준으로
       // 고정된 값이라 로그인한 사용자 본인을 가리키지 않을 수 있으므로,
       // 아래에서 viewerProfile.display_name과 비교해 다시 계산한다.
       supabase
         .from("match_players")
-        .select("match_id, name, score, rank, is_win, is_me"),
+        .select("match_id, name, score, rank, is_win, is_me, faction_id"),
       supabase.from("match_expansions").select("match_id, expansion_id"),
       supabase.from("expansions").select("id, name_ko, name_en"),
+      supabase.from("terraforming_mars_maps").select("id, name_ko, name_en"),
+      supabase.from("player_factions").select("id, name_ko, name_en"),
       user
         ? supabase
             .from("profiles")
@@ -72,6 +78,8 @@ export default async function DashboardPage({
     matchPlayersError ||
     matchExpansionsError ||
     expansionsError ||
+    terraformingMarsMapsError ||
+    playerFactionsError ||
     viewerProfileError
   ) {
     throw new Error("대시보드 데이터를 불러오지 못했습니다.");
@@ -89,6 +97,8 @@ export default async function DashboardPage({
     id: m.id,
     gameId: m.game_id,
     playedAt: m.played_at,
+    createdAt: m.created_at,
+    mapId: m.terraforming_mars_map_id,
   }));
   // "나"는 더 이상 매치를 기록한 사람이 저장해 둔 is_me가 아니라, 지금
   // 로그인한 사용자의 표시 이름과 같은 이름의 플레이어로 조회 시점에 다시
@@ -101,6 +111,7 @@ export default async function DashboardPage({
     rank: p.rank,
     isWin: p.is_win,
     isMe: viewerName !== null && p.name === viewerName,
+    factionId: p.faction_id,
   }));
   const myMatchResults = allMatchPlayers
     .filter((p) => p.isMe)
@@ -131,6 +142,16 @@ export default async function DashboardPage({
       nameEn: e.name_en,
     })),
     allMatchPlayers,
+    (terraformingMarsMaps ?? []).map((m) => ({
+      id: m.id,
+      nameKo: m.name_ko,
+      nameEn: m.name_en,
+    })),
+    (playerFactions ?? []).map((f) => ({
+      id: f.id,
+      nameKo: f.name_ko,
+      nameEn: f.name_en,
+    })),
   );
 
   const selectedGame = selectedSlug
