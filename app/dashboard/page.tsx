@@ -50,7 +50,7 @@ export default async function DashboardPage({
       // 매치도 함께 노출한다.
       supabase
         .from("matches")
-        .select("id, game_id, played_at, created_at, terraforming_mars_map_id"),
+        .select("id, game_id, played_at, terraforming_mars_map_id"),
       // 마찬가지로 match_players도 소유 매치 또는 이름이 일치하는 매치의
       // 플레이어를 모두 가져온다. is_me는 매치를 "기록한" 사람 기준으로
       // 고정된 값이라 로그인한 사용자 본인을 가리키지 않을 수 있으므로,
@@ -97,7 +97,6 @@ export default async function DashboardPage({
     id: m.id,
     gameId: m.game_id,
     playedAt: m.played_at,
-    createdAt: m.created_at,
     mapId: m.terraforming_mars_map_id,
   }));
   // "나"는 더 이상 매치를 기록한 사람이 저장해 둔 is_me가 아니라, 지금
