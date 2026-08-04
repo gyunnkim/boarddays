@@ -22,6 +22,40 @@ function readCredentials(formData: FormData) {
   return { email, password };
 }
 
+/**
+ * 회원가입/게스트 입장 시 이름은 그 시점에 한 번만 입력받는다(이후
+ * 설정 화면에서 수정 불가). 공백만 입력된 경우도 미입력으로 취급한다.
+ */
+function readDisplayName(formData: FormData): string | null {
+  const raw = formData.get("display_name");
+  const name = typeof raw === "string" ? raw.trim() : "";
+  return name || null;
+}
+
+/**
+ * 가입/게스트 입장 전에 이름 중복 여부를 미리 확인한다. 최종 무결성은
+ * profiles_display_name_key unique 제약과 handle_new_user 트리거가
+ * 보장하므로, 이 확인은 사용자에게 더 이른 시점에 친절한 에러 메시지를
+ * 보여주기 위한 것일 뿐이다.
+ */
+async function checkDisplayNameAvailable(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  displayName: string,
+): Promise<string | null> {
+  const { data: available, error } = await supabase.rpc(
+    "is_display_name_available",
+    { p_display_name: displayName },
+  );
+
+  if (error) {
+    return "이름 확인에 실패했습니다. 잠시 후 다시 시도해 주세요.";
+  }
+  if (!available) {
+    return "이미 사용 중인 이름입니다.";
+  }
+  return null;
+}
+
 export async function signIn(
   _state: AuthFormState,
   formData: FormData,
@@ -52,9 +86,22 @@ export async function signUp(
   if (credentials.password.length < 6) {
     return { error: "비밀번호는 6자 이상이어야 합니다." };
   }
+  const displayName = readDisplayName(formData);
+  if (!displayName) {
+    return { error: "이름을 입력해 주세요." };
+  }
 
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp(credentials);
+
+  const nameError = await checkDisplayNameAvailable(supabase, displayName);
+  if (nameError) {
+    return { error: nameError };
+  }
+
+  const { data, error } = await supabase.auth.signUp({
+    ...credentials,
+    options: { data: { display_name: displayName } },
+  });
 
   if (error) {
     return { error: error.message };
@@ -116,10 +163,31 @@ export async function signOut() {
  * 때문에 `auth.uid()` 기반 RLS 정책을 그대로 재사용할 수 있다.
  * (Supabase 프로젝트 설정에서 Anonymous sign-ins가 활성화되어 있어야
  * 동작한다: Authentication > Settings > User Signups.)
+ *
+ * 이름은 게스트 입장 시점에 한 번만 입력받는다(이후 설정 화면에서 수정
+ * 불가). signUp과 마찬가지로 signInAnonymously의 options.data로 넘겨
+ * handle_new_user 트리거가 profiles.display_name을 원자적으로 채우게
+ * 한다.
  */
-export async function signInAsGuest(): Promise<AuthFormState> {
+export async function signInAsGuest(
+  _state: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const displayName = readDisplayName(formData);
+  if (!displayName) {
+    return { error: "이름을 입력해 주세요." };
+  }
+
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInAnonymously();
+
+  const nameError = await checkDisplayNameAvailable(supabase, displayName);
+  if (nameError) {
+    return { error: nameError };
+  }
+
+  const { error } = await supabase.auth.signInAnonymously({
+    options: { data: { display_name: displayName } },
+  });
 
   if (error) {
     return {

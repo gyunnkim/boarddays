@@ -334,7 +334,7 @@ export function MatchForm({
           setFactionByRow((prev) => ({ ...prev, [rowId]: e.target.value }))
         }
         required
-        className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
+        className="w-full rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-sm text-stone-50 outline-none focus:border-amber-600"
       >
         <option value="">{capability.factionLabel ?? "선택"} 선택</option>
         {ungrouped.map((f) => (
@@ -359,7 +359,7 @@ export function MatchForm({
     <form
       action={action}
       onSubmit={handleSubmit}
-      className="space-y-8 rounded-xl border border-zinc-800 bg-zinc-900/60 p-6"
+      className="space-y-8 rounded-xl border border-stone-800 bg-stone-900/60 p-6"
     >
       <input type="hidden" name="game_id" value={game.id} />
       {myNames.length > 0 && (
@@ -372,14 +372,14 @@ export function MatchForm({
 
       {expansions.length > 0 && (
         <fieldset className="space-y-3">
-          <legend className="text-sm font-medium text-zinc-200">
+          <legend className="text-sm font-medium text-stone-200">
             {dict.expansionsUsed}
           </legend>
           <div className="flex flex-wrap gap-3">
             {expansions.map((expansion) => (
               <label
                 key={expansion.id}
-                className="flex items-center gap-2 rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-200"
+                className="flex items-center gap-2 rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-sm text-stone-200"
               >
                 <input
                   type="checkbox"
@@ -397,7 +397,7 @@ export function MatchForm({
 
       {capability.promoFactions && (
         <div className="flex flex-wrap items-center gap-3">
-          <label className="flex items-center gap-2 rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-200">
+          <label className="flex items-center gap-2 rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-sm text-stone-200">
             <input
               type="checkbox"
               checked={promoFactionsOn}
@@ -415,7 +415,7 @@ export function MatchForm({
 
       {capability.hasMapSelection && (
         <fieldset className="space-y-3">
-          <legend className="text-sm font-medium text-zinc-200">
+          <legend className="text-sm font-medium text-stone-200">
             {dict.map}
           </legend>
           {capability.mapGroups && capability.mapGroups.length > 0 && (
@@ -423,7 +423,7 @@ export function MatchForm({
               {capability.mapGroups.map((group) => (
                 <label
                   key={group.slug}
-                  className="flex items-center gap-2 rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-200"
+                  className="flex items-center gap-2 rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-sm text-stone-200"
                 >
                   <input
                     type="checkbox"
@@ -441,7 +441,7 @@ export function MatchForm({
               value={effectiveMapId ?? ""}
               onChange={(e) => setMapId(e.target.value)}
               required
-              className="rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
+              className="rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-sm text-stone-50 outline-none focus:border-amber-600"
             >
               <option value="">{dict.selectMap}</option>
               {availableMaps.map((m) => (
@@ -453,7 +453,7 @@ export function MatchForm({
             <button
               type="button"
               onClick={selectRandomMap}
-              className="rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-200 transition-colors hover:bg-zinc-800"
+              className="rounded-md border border-stone-700 px-3 py-1.5 text-xs text-stone-200 transition-colors hover:bg-stone-800"
             >
               {dict.randomSelect}
             </button>
@@ -463,7 +463,7 @@ export function MatchForm({
 
       {capability.colonyDraw && coloniesEnabled && (
         <fieldset className="space-y-3">
-          <legend className="text-sm font-medium text-zinc-200">
+          <legend className="text-sm font-medium text-stone-200">
             {dict.colonies}
           </legend>
           <div className="flex flex-wrap items-center gap-3">
@@ -471,14 +471,14 @@ export function MatchForm({
               type="button"
               onClick={drawColonies}
               disabled={colonies.length === 0}
-              className="rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-200 transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-md border border-stone-700 px-3 py-1.5 text-xs text-stone-200 transition-colors hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {formatTemplate(dict.drawColoniesTemplate, {
                 count: players.length + capability.colonyDraw.countOffset,
               })}
             </button>
             {colonies.length === 0 && (
-              <span className="text-xs text-zinc-500">
+              <span className="text-xs text-stone-500">
                 {dict.noColoniesCatalog}
               </span>
             )}
@@ -490,7 +490,7 @@ export function MatchForm({
                 return (
                   <span
                     key={id}
-                    className="rounded-md border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-xs text-zinc-200"
+                    className="rounded-md border border-stone-700 bg-stone-950 px-3 py-1.5 text-xs text-stone-200"
                   >
                     {colony
                       ? pickLocalized(locale, colony.name_ko, colony.name_en)
@@ -508,7 +508,7 @@ export function MatchForm({
 
       <fieldset className="space-y-4">
         <div className="flex items-center justify-between">
-          <legend className="text-sm font-medium text-zinc-200">
+          <legend className="text-sm font-medium text-stone-200">
             {dict.players}
           </legend>
           <div className="flex gap-2">
@@ -516,14 +516,14 @@ export function MatchForm({
               type="button"
               onClick={randomizeOrder}
               disabled={players.length < 2}
-              className="rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-200 transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-md border border-stone-700 px-3 py-1.5 text-xs text-stone-200 transition-colors hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {dict.randomizeOrder}
             </button>
             <button
               type="button"
               onClick={addPlayer}
-              className="rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-200 transition-colors hover:bg-zinc-800"
+              className="rounded-md border border-stone-700 px-3 py-1.5 text-xs text-stone-200 transition-colors hover:bg-stone-800"
             >
               {dict.addPlayer}
             </button>
@@ -538,18 +538,18 @@ export function MatchForm({
             return (
               <div
                 key={row.id}
-                className="space-y-3 rounded-lg border border-zinc-800 p-4"
+                className="space-y-3 rounded-lg border border-stone-800 p-4"
               >
                 <input type="hidden" name="player_ids" value={row.id} />
 
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="w-4 shrink-0 text-center text-xs font-medium text-zinc-500">
+                  <span className="w-4 shrink-0 text-center text-xs font-medium text-stone-500">
                     {index + 1}
                   </span>
 
                   {capability.playerColors && (
                     <div className="shrink-0 space-y-1">
-                      <span className="block text-xs text-zinc-400">
+                      <span className="block text-xs text-stone-400">
                         {dict.color}
                       </span>
                       <PlayerColorPicker
@@ -566,7 +566,7 @@ export function MatchForm({
                   <div className="min-w-[9rem] flex-1 space-y-1">
                     <label
                       htmlFor={`${formId}-name-${row.id}`}
-                      className="text-xs text-zinc-400"
+                      className="text-xs text-stone-400"
                     >
                       {dict.name}
                     </label>
@@ -578,13 +578,13 @@ export function MatchForm({
                       required
                       defaultValue={index === 0 ? myNames[0] : undefined}
                       placeholder={dict.namePlaceholder}
-                      className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
+                      className="w-full rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-sm text-stone-50 outline-none focus:border-amber-600"
                     />
                   </div>
 
                   {factionsEnabled && (
                     <div className="min-w-[10rem] flex-1 space-y-1">
-                      <label className="text-xs text-zinc-400">
+                      <label className="text-xs text-stone-400">
                         {capability.factionLabel ?? "진영"}
                       </label>
                       {renderFactionSelect(row.id)}
@@ -595,7 +595,7 @@ export function MatchForm({
                     <div className="w-28 space-y-1">
                       <label
                         htmlFor={`${formId}-score-${row.id}`}
-                        className="text-xs text-zinc-400"
+                        className="text-xs text-stone-400"
                       >
                         {dict.score}
                       </label>
@@ -605,7 +605,7 @@ export function MatchForm({
                         type="number"
                         step="1"
                         required
-                        className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
+                        className="w-full rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-sm text-stone-50 outline-none focus:border-amber-600"
                       />
                     </div>
                   )}
@@ -614,7 +614,7 @@ export function MatchForm({
                     <div className="w-28 space-y-1">
                       <label
                         htmlFor={`${formId}-mc-${row.id}`}
-                        className="text-xs text-zinc-400"
+                        className="text-xs text-stone-400"
                       >
                         {capability.megacreditsLabel ?? "메가크레딧"}
                       </label>
@@ -624,7 +624,7 @@ export function MatchForm({
                         type="number"
                         step="1"
                         required
-                        className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
+                        className="w-full rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-sm text-stone-50 outline-none focus:border-amber-600"
                       />
                     </div>
                   )}
@@ -633,7 +633,7 @@ export function MatchForm({
                     <button
                       type="button"
                       onClick={() => removePlayer(row.id)}
-                      className="ml-auto text-xs text-zinc-500 hover:text-red-400"
+                      className="ml-auto text-xs text-stone-500 hover:text-red-400"
                     >
                       {dict.remove}
                     </button>
@@ -647,7 +647,7 @@ export function MatchForm({
                         <div key={component.key} className="space-y-1">
                           <label
                             htmlFor={`${formId}-${component.key}-${row.id}`}
-                            className="text-xs text-zinc-400"
+                            className="text-xs text-stone-400"
                           >
                             {component.labelKo}
                           </label>
@@ -665,7 +665,7 @@ export function MatchForm({
                                 e.target.value,
                               )
                             }
-                            className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
+                            className="w-full rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-sm text-stone-50 outline-none focus:border-amber-600"
                           />
                         </div>
                       ))}
@@ -673,10 +673,10 @@ export function MatchForm({
 
                     <div className="flex gap-3">
                       <div className="w-24 space-y-1">
-                        <span className="block text-xs text-zinc-400">
+                        <span className="block text-xs text-stone-400">
                           {dict.total}
                         </span>
-                        <div className="flex h-[38px] items-center justify-center rounded-md border border-zinc-700 bg-zinc-800/60 px-3 text-sm font-semibold text-zinc-50">
+                        <div className="flex h-[38px] items-center justify-center rounded-md border border-stone-700 bg-stone-800/60 px-3 text-sm font-semibold text-stone-50">
                           {rowScoreTotal(row.id)}
                         </div>
                       </div>
@@ -685,7 +685,7 @@ export function MatchForm({
                         <div className="w-28 space-y-1">
                           <label
                             htmlFor={`${formId}-mc-${row.id}`}
-                            className="text-xs text-zinc-400"
+                            className="text-xs text-stone-400"
                           >
                             {capability.megacreditsLabel ?? "메가크레딧"}
                           </label>
@@ -695,7 +695,7 @@ export function MatchForm({
                             type="number"
                             step="1"
                             required
-                            className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
+                            className="w-full rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-sm text-stone-50 outline-none focus:border-amber-600"
                           />
                         </div>
                       )}
@@ -717,7 +717,7 @@ export function MatchForm({
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-md bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full rounded-md bg-amber-100 px-3 py-2 text-sm font-medium text-stone-950 transition-colors hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {pending ? dict.saving : dict.save}
       </button>

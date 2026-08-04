@@ -14,11 +14,25 @@ export function GuestLoginButton({ dict }: { dict: Dictionary["guest"] }) {
   );
 
   return (
-    <form action={action} className="space-y-1.5">
+    <form action={action} className="space-y-2">
+      <div className="space-y-1.5">
+        <label htmlFor="guest_display_name" className="text-sm text-stone-300">
+          {dict.name} *
+        </label>
+        <input
+          id="guest_display_name"
+          name="display_name"
+          type="text"
+          required
+          autoComplete="nickname"
+          placeholder={dict.namePlaceholder}
+          className="w-full rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-sm text-stone-50 outline-none focus:border-amber-600"
+        />
+      </div>
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-md border border-zinc-700 px-3 py-2 text-sm text-zinc-200 transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full rounded-md border border-stone-700 px-3 py-2 text-sm text-stone-200 transition-colors hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {pending ? dict.submitting : dict.submit}
       </button>

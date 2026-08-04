@@ -144,10 +144,10 @@ export default async function DashboardPage({
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-50">
+          <h1 className="text-2xl font-semibold text-stone-50">
             {dict.dashboard.title}
           </h1>
-          <p className="mt-1 text-sm text-zinc-400">
+          <p className="mt-1 text-sm text-stone-400">
             {dict.dashboard.subtitle}
           </p>
         </div>
@@ -155,27 +155,27 @@ export default async function DashboardPage({
           <div className="flex flex-col items-end gap-1">
             <Link
               href="/signup"
-              className="rounded-md bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-zinc-200"
+              className="rounded-md bg-amber-100 px-3 py-2 text-sm font-medium text-stone-950 transition-colors hover:bg-amber-200"
             >
               {dict.dashboard.guestSignupCta}
             </Link>
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-stone-500">
               {dict.dashboard.guestNewMatchHint}
             </p>
           </div>
         ) : (
           <Link
             href="/dashboard/matches/new"
-            className="rounded-md bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-zinc-200"
+            className="rounded-md bg-amber-100 px-3 py-2 text-sm font-medium text-stone-950 transition-colors hover:bg-amber-200"
           >
             {dict.dashboard.newMatch}
           </Link>
         )}
       </div>
 
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-6">
-        <p className="text-sm text-zinc-400">{dict.dashboard.record}</p>
-        <p className="mt-2 text-3xl font-semibold text-zinc-50">
+      <div className="rounded-xl border border-stone-800 bg-stone-900/60 p-6">
+        <p className="text-sm text-stone-400">{dict.dashboard.record}</p>
+        <p className="mt-2 text-3xl font-semibold text-stone-50">
           {formatTemplate(dict.dashboard.overallSummaryTemplate, {
             total: stats.totalMatches,
             wins: stats.totalWins,
@@ -186,10 +186,10 @@ export default async function DashboardPage({
       </div>
 
       <div>
-        <h2 className="text-lg font-medium text-zinc-100">
+        <h2 className="text-lg font-medium text-stone-100">
           {dict.dashboard.perGameTitle}
         </h2>
-        <p className="mt-1 text-sm text-zinc-500">
+        <p className="mt-1 text-sm text-stone-500">
           {dict.dashboard.perGameHint}
         </p>
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -201,20 +201,20 @@ export default async function DashboardPage({
                 href={isActive ? "/dashboard" : `/dashboard?game=${game.slug}`}
                 className={`rounded-xl border p-6 text-left transition-colors ${
                   isActive
-                    ? "border-zinc-50 bg-zinc-800/80"
-                    : "border-zinc-800 bg-zinc-900/60 hover:border-zinc-700"
+                    ? "border-amber-500/70 bg-stone-800/80"
+                    : "border-stone-800 bg-stone-900/60 hover:border-stone-700"
                 }`}
               >
                 <Badge>{pickLocalized(locale, game.nameKo, game.nameEn)}</Badge>
                 {totalMatches > 0 ? (
-                  <p className="mt-4 text-sm text-zinc-400">
+                  <p className="mt-4 text-sm text-stone-400">
                     {formatTemplate(dict.dashboard.playedSummaryTemplate, {
                       count: totalMatches,
                       rate: formatPercent(winRate),
                     })}
                   </p>
                 ) : (
-                  <p className="mt-4 text-sm text-zinc-500">
+                  <p className="mt-4 text-sm text-stone-500">
                     {dict.dashboard.noMatchesForGame}
                   </p>
                 )}
@@ -226,7 +226,7 @@ export default async function DashboardPage({
 
       <div>
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-medium text-zinc-100">
+          <h2 className="text-lg font-medium text-stone-100">
             {dict.dashboard.historyTitle}
             {selectedGame
               ? ` · ${pickLocalized(locale, selectedGame.nameKo, selectedGame.nameEn)}`
@@ -235,7 +235,7 @@ export default async function DashboardPage({
           {selectedGame && (
             <Link
               href="/dashboard"
-              className="text-sm text-zinc-400 hover:text-zinc-200"
+              className="text-sm text-stone-400 hover:text-stone-200"
             >
               {dict.dashboard.showAll}
             </Link>
@@ -250,7 +250,7 @@ export default async function DashboardPage({
             dict={dict}
           />
         ) : (
-          <p className="mt-4 text-sm text-zinc-500">
+          <p className="mt-4 text-sm text-stone-500">
             {selectedGame
               ? dict.dashboard.historyEmptyFiltered
               : dict.dashboard.historyEmpty}

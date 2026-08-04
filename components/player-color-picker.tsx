@@ -70,7 +70,7 @@ export function PlayerColorPicker({
         aria-expanded={open}
         aria-controls={listboxId}
         title={selected ? selected.labelKo : triggerLabel}
-        className={`inline-flex shrink-0 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 ${
+        className={`inline-flex shrink-0 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
           invalid ? "ring-2 ring-red-500" : ""
         }`}
       >
@@ -85,7 +85,7 @@ export function PlayerColorPicker({
           id={listboxId}
           role="listbox"
           aria-label={triggerLabel}
-          className="absolute left-0 top-full z-20 mt-2 w-48 max-w-[calc(100vw-2rem)] rounded-md border border-zinc-700 bg-zinc-950 p-2 shadow-lg shadow-black/40"
+          className="absolute left-0 top-full z-20 mt-2 w-48 max-w-[calc(100vw-2rem)] rounded-md border border-stone-700 bg-stone-950 p-2 shadow-lg shadow-black/40"
         >
           <div className="grid grid-cols-4 gap-2">
             {options.map((option, index) => (
@@ -102,8 +102,8 @@ export function PlayerColorPicker({
                   setOpen(false);
                   triggerRef.current?.focus();
                 }}
-                className={`flex flex-col items-center gap-1 rounded-md p-1 text-[10px] leading-tight text-zinc-300 hover:bg-zinc-800 ${
-                  option.value === value ? "bg-zinc-800 ring-1 ring-zinc-400" : ""
+                className={`flex flex-col items-center gap-1 rounded-md p-1 text-[10px] leading-tight text-stone-300 hover:bg-stone-800 ${
+                  option.value === value ? "bg-stone-800 ring-1 ring-amber-500" : ""
                 }`}
               >
                 <PlayerColorSwatch color={option.value} />

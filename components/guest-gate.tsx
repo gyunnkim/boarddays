@@ -8,21 +8,21 @@ import type { Dictionary } from "@/lib/i18n/dictionary";
  */
 export function GuestGate({ dict }: { dict: Dictionary }) {
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-6">
-      <h2 className="text-lg font-medium text-zinc-50">
+    <div className="rounded-xl border border-stone-800 bg-stone-900/60 p-6">
+      <h2 className="text-lg font-medium text-stone-50">
         {dict.guestGate.title}
       </h2>
-      <p className="mt-2 text-sm text-zinc-400">{dict.guestGate.description}</p>
+      <p className="mt-2 text-sm text-stone-400">{dict.guestGate.description}</p>
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <Link
           href="/signup"
-          className="rounded-md bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-zinc-200"
+          className="rounded-md bg-amber-100 px-3 py-2 text-sm font-medium text-stone-950 transition-colors hover:bg-amber-200"
         >
           {dict.guestGate.cta}
         </Link>
         <Link
           href="/dashboard"
-          className="text-sm text-zinc-400 hover:text-zinc-200"
+          className="text-sm text-stone-400 hover:text-stone-200"
         >
           {dict.guestGate.back}
         </Link>

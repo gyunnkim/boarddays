@@ -30,7 +30,7 @@ export default async function RootLayout({
       lang={locale}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col bg-zinc-950 text-zinc-50">
+      <body className="flex min-h-full flex-col bg-stone-950 text-stone-50">
         {children}
       </body>
     </html>

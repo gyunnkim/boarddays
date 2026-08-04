@@ -23,20 +23,20 @@ export function SignupForm({
       </div>
       <form
         action={action}
-        className="w-full max-w-sm space-y-5 rounded-xl border border-zinc-800 bg-zinc-900/60 p-8"
+        className="w-full max-w-sm space-y-5 rounded-xl border border-stone-800 bg-stone-900/60 p-8"
       >
         <div>
-          <h1 className="text-xl font-semibold text-zinc-50">
+          <h1 className="text-xl font-semibold text-stone-50">
             {dict.heading}
           </h1>
-          <p className="mt-1 text-sm text-zinc-400">
+          <p className="mt-1 text-sm text-stone-400">
             {dict.subheading}
           </p>
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="email" className="text-sm text-zinc-300">
-            {dict.email}
+          <label htmlFor="email" className="text-sm text-stone-300">
+            {dict.email} *
           </label>
           <input
             id="email"
@@ -44,13 +44,29 @@ export function SignupForm({
             type="email"
             required
             autoComplete="email"
-            className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
+            className="w-full rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-sm text-stone-50 outline-none focus:border-amber-600"
           />
         </div>
 
         <div className="space-y-1.5">
-          <label htmlFor="password" className="text-sm text-zinc-300">
-            {dict.password}
+          <label htmlFor="display_name" className="text-sm text-stone-300">
+            {dict.name} *
+          </label>
+          <input
+            id="display_name"
+            name="display_name"
+            type="text"
+            required
+            autoComplete="nickname"
+            placeholder={dict.namePlaceholder}
+            className="w-full rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-sm text-stone-50 outline-none focus:border-amber-600"
+          />
+          <p className="text-xs text-stone-500">{dict.nameHint}</p>
+        </div>
+
+        <div className="space-y-1.5">
+          <label htmlFor="password" className="text-sm text-stone-300">
+            {dict.password} *
           </label>
           <input
             id="password"
@@ -59,9 +75,9 @@ export function SignupForm({
             required
             autoComplete="new-password"
             minLength={6}
-            className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
+            className="w-full rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-sm text-stone-50 outline-none focus:border-amber-600"
           />
-          <p className="text-xs text-zinc-500">{dict.passwordHint}</p>
+          <p className="text-xs text-stone-500">{dict.passwordHint}</p>
         </div>
 
         {state?.error && <p className="text-sm text-red-400">{state.error}</p>}
@@ -72,16 +88,16 @@ export function SignupForm({
         <button
           type="submit"
           disabled={pending}
-          className="w-full rounded-md bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full rounded-md bg-amber-100 px-3 py-2 text-sm font-medium text-stone-950 transition-colors hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {pending ? dict.submitting : dict.submit}
         </button>
 
-        <p className="text-center text-sm text-zinc-400">
+        <p className="text-center text-sm text-stone-400">
           {dict.hasAccount}{" "}
           <Link
             href="/login"
-            className="text-zinc-100 underline underline-offset-4"
+            className="text-stone-100 underline underline-offset-4"
           >
             {dict.loginLink}
           </Link>

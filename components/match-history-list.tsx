@@ -35,10 +35,10 @@ export function MatchHistoryList({
             entry.players[entry.players.length - 1]?.rank ?? entry.myRank;
           const cardTone =
             entry.myRank === 1
-              ? "border-l-4 border-l-sky-500 border-y border-r border-zinc-800 bg-sky-500/10"
+              ? "border-l-4 border-l-amber-500 border-y border-r border-stone-800 bg-amber-500/10"
               : entry.myRank === lastRank
-                ? "border-l-4 border-l-red-500 border-y border-r border-zinc-800 bg-red-500/10"
-                : "border-l-4 border-l-yellow-500 border-y border-r border-zinc-800 bg-yellow-500/10";
+                ? "border-l-4 border-l-red-500 border-y border-r border-stone-800 bg-red-500/10"
+                : "border-l-4 border-l-stone-500 border-y border-r border-stone-800 bg-stone-500/10";
 
           return (
             <li key={entry.matchId} className={`rounded-xl p-4 sm:p-5 ${cardTone}`}>
@@ -53,7 +53,7 @@ export function MatchHistoryList({
                     </Badge>
                   ))}
                 </div>
-                <span className="text-xs text-zinc-500">
+                <span className="text-xs text-stone-500">
                   {formatDate(entry.playedAt)}
                 </span>
               </div>
@@ -63,13 +63,13 @@ export function MatchHistoryList({
                     key={`${entry.matchId}-${index}-${player.name}`}
                     className={
                       player.isMe
-                        ? "flex items-center gap-1.5 font-medium text-zinc-50"
-                        : "flex items-center gap-1.5 text-zinc-400"
+                        ? "flex items-center gap-1.5 font-medium text-stone-50"
+                        : "flex items-center gap-1.5 text-stone-400"
                     }
                   >
                     <span
                       className={
-                        player.isWin ? "text-emerald-400" : "text-zinc-500"
+                        player.isWin ? "text-emerald-400" : "text-stone-500"
                       }
                     >
                       {formatTemplate(dict.dashboard.rankTemplate, {
@@ -96,7 +96,7 @@ export function MatchHistoryList({
           <button
             type="button"
             onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}
-            className="rounded-md border border-zinc-800 px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-700 hover:text-zinc-50"
+            className="rounded-md border border-stone-800 px-4 py-2 text-sm font-medium text-stone-300 transition-colors hover:border-stone-700 hover:text-stone-50"
           >
             {dict.dashboard.loadMore}
           </button>
