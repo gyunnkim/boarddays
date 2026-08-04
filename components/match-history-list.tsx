@@ -53,7 +53,7 @@ export function MatchHistoryList({
                     </Badge>
                   ))}
                   {entry.map && (
-                    <Badge>
+                    <Badge tone="map">
                       {pickLocalized(locale, entry.map.nameKo, entry.map.nameEn)}
                     </Badge>
                   )}

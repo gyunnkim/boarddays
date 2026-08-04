@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { runWithAuthRetry } from "@/lib/supabase/with-retry";
 import { buildDashboardStats } from "@/lib/domain/stats";
 import { buildMatchHistory } from "@/lib/domain/match-history";
+import { getGameCapability } from "@/lib/domain/capabilities";
 import { Badge } from "@/components/badge";
 import { MatchHistoryList } from "@/components/match-history-list";
 import { getLocale } from "@/lib/i18n/get-locale";
@@ -15,12 +16,28 @@ function formatPercent(rate: number | null) {
   return `${Math.round(rate * 100)}%`;
 }
 
+function filterChipClass(active: boolean) {
+  return active
+    ? "rounded-full border border-amber-500/70 bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-200"
+    : "rounded-full border border-stone-800 px-2.5 py-0.5 text-xs font-medium text-stone-400 transition-colors hover:border-stone-700 hover:text-stone-200";
+}
+
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ game?: string }>;
+  searchParams: Promise<{
+    game?: string;
+    map?: string;
+    corp?: string;
+    corpMine?: string;
+  }>;
 }) {
-  const { game: selectedSlug } = await searchParams;
+  const {
+    game: selectedSlug,
+    map: selectedMapSlug,
+    corp: selectedCorpSlug,
+    corpMine: selectedCorpMine,
+  } = await searchParams;
   const supabase = await createClient();
   const locale = await getLocale();
   const dict = getDictionary(locale);
@@ -60,8 +77,10 @@ export default async function DashboardPage({
         .select("match_id, name, score, rank, is_win, is_me, faction_id"),
       supabase.from("match_expansions").select("match_id, expansion_id"),
       supabase.from("expansions").select("id, name_ko, name_en"),
-      supabase.from("terraforming_mars_maps").select("id, name_ko, name_en"),
-      supabase.from("player_factions").select("id, name_ko, name_en"),
+      supabase
+        .from("terraforming_mars_maps")
+        .select("id, slug, name_ko, name_en"),
+      supabase.from("player_factions").select("id, slug, name_ko, name_en"),
       user
         ? supabase
             .from("profiles")
@@ -143,11 +162,13 @@ export default async function DashboardPage({
     allMatchPlayers,
     (terraformingMarsMaps ?? []).map((m) => ({
       id: m.id,
+      slug: m.slug,
       nameKo: m.name_ko,
       nameEn: m.name_en,
     })),
     (playerFactions ?? []).map((f) => ({
       id: f.id,
+      slug: f.slug,
       nameKo: f.name_ko,
       nameEn: f.name_en,
     })),
@@ -156,9 +177,77 @@ export default async function DashboardPage({
   const selectedGame = selectedSlug
     ? gameCatalog.find((g) => g.slug === selectedSlug)
     : undefined;
-  const visibleHistory = selectedGame
+  const gameFilteredHistory = selectedGame
     ? history.filter((entry) => entry.game.id === selectedGame.id)
     : history;
+
+  // 맵/기업 필터는 특정 게임을 고른 뒤, 그 게임의 capability가 지원하는
+  // 경우에만 노출한다(게임 이름을 직접 분기하지 않음).
+  const gameCapability = selectedGame
+    ? getGameCapability(selectedGame.slug)
+    : null;
+  const showMapFilter = gameCapability?.hasMapSelection ?? false;
+  const showFactionFilter = gameCapability?.hasFactions ?? false;
+
+  const availableMaps = showMapFilter
+    ? Array.from(
+        new Map(
+          gameFilteredHistory
+            .filter((entry) => entry.map !== null)
+            .map((entry) => [entry.map!.slug, entry.map!]),
+        ).values(),
+      )
+    : [];
+  // "기업"(진영) 필터의 기본 선택지는 매치 참여자 누구든 그 진영을 썼는지
+  // 기준으로 넓게 잡는다. "나" 칩을 함께 켜면 그중 내("isMe") 플레이어가
+  // 그 진영을 쓴 매치로 좁힌다.
+  const availableFactions = showFactionFilter
+    ? Array.from(
+        new Map(
+          gameFilteredHistory
+            .flatMap((entry) => entry.players)
+            .filter((player) => player.faction !== null)
+            .map((player) => [player.faction!.slug, player.faction!]),
+        ).values(),
+      )
+    : [];
+  const onlyMyFaction = Boolean(selectedCorpSlug) && selectedCorpMine === "1";
+
+  const visibleHistory = gameFilteredHistory
+    .filter((entry) => !selectedMapSlug || entry.map?.slug === selectedMapSlug)
+    .filter(
+      (entry) =>
+        !selectedCorpSlug ||
+        entry.players.some(
+          (player) =>
+            player.faction?.slug === selectedCorpSlug &&
+            (!onlyMyFaction || player.isMe),
+        ),
+    );
+
+  function buildHistoryHref(overrides: {
+    map?: string | null;
+    corp?: string | null;
+    corpMine?: string | null;
+  }) {
+    const params = new URLSearchParams();
+    if (selectedSlug) params.set("game", selectedSlug);
+
+    const nextMap = overrides.map !== undefined ? overrides.map : selectedMapSlug;
+    if (nextMap) params.set("map", nextMap);
+
+    const nextCorp =
+      overrides.corp !== undefined ? overrides.corp : selectedCorpSlug;
+    if (nextCorp) params.set("corp", nextCorp);
+
+    // corp 필터가 없으면 "나" 상태도 의미가 없으므로 함께 초기화한다.
+    const nextCorpMine =
+      overrides.corpMine !== undefined ? overrides.corpMine : selectedCorpMine;
+    if (nextCorp && nextCorpMine === "1") params.set("corpMine", "1");
+
+    const query = params.toString();
+    return query ? `/dashboard?${query}` : "/dashboard";
+  }
 
   return (
     <div className="space-y-8">
@@ -261,6 +350,70 @@ export default async function DashboardPage({
             </Link>
           )}
         </div>
+
+        {(availableMaps.length > 0 || availableFactions.length > 0) && (
+          <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2">
+            {availableMaps.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-xs text-stone-500">
+                  {dict.dashboard.mapFilterLabel}
+                </span>
+                <Link
+                  href={buildHistoryHref({ map: null })}
+                  className={filterChipClass(!selectedMapSlug)}
+                >
+                  {dict.dashboard.filterAll}
+                </Link>
+                {availableMaps.map((map) => (
+                  <Link
+                    key={map.id}
+                    href={buildHistoryHref({
+                      map: selectedMapSlug === map.slug ? null : map.slug,
+                    })}
+                    className={filterChipClass(selectedMapSlug === map.slug)}
+                  >
+                    {pickLocalized(locale, map.nameKo, map.nameEn)}
+                  </Link>
+                ))}
+              </div>
+            )}
+            {availableFactions.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-xs text-stone-500">
+                  {gameCapability?.factionLabel ?? dict.dashboard.factionFilterLabel}
+                </span>
+                <Link
+                  href={buildHistoryHref({ corp: null })}
+                  className={filterChipClass(!selectedCorpSlug)}
+                >
+                  {dict.dashboard.filterAll}
+                </Link>
+                {availableFactions.map((faction) => (
+                  <Link
+                    key={faction.id}
+                    href={buildHistoryHref({
+                      corp:
+                        selectedCorpSlug === faction.slug ? null : faction.slug,
+                    })}
+                    className={filterChipClass(selectedCorpSlug === faction.slug)}
+                  >
+                    {pickLocalized(locale, faction.nameKo, faction.nameEn)}
+                  </Link>
+                ))}
+                {selectedCorpSlug && (
+                  <Link
+                    href={buildHistoryHref({
+                      corpMine: onlyMyFaction ? null : "1",
+                    })}
+                    className={filterChipClass(onlyMyFaction)}
+                  >
+                    {dict.dashboard.you}
+                  </Link>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {visibleHistory.length > 0 ? (
           <MatchHistoryList

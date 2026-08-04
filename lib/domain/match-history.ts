@@ -42,12 +42,14 @@ export interface ExpansionCatalogEntry {
 
 export interface MapCatalogEntry {
   id: string;
+  slug: string;
   nameKo: string;
   nameEn: string;
 }
 
 export interface FactionCatalogEntry {
   id: string;
+  slug: string;
   nameKo: string;
   nameEn: string;
 }
