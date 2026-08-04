@@ -167,6 +167,11 @@ export async function createMatch(
   if (!user) {
     return { error: "로그인이 필요합니다." };
   }
+  if (user.is_anonymous) {
+    return {
+      error: "게스트는 매치를 기록할 수 없습니다. 회원가입 후 이용해 주세요.",
+    };
+  }
 
   const gameId = formData.get("game_id");
   if (typeof gameId !== "string" || !gameId) {

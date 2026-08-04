@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getGameCapability } from "@/lib/domain/capabilities";
 import { MatchForm } from "./match-form";
+import { GuestGate } from "@/components/guest-gate";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { pickLocalized } from "@/lib/i18n/config";
@@ -21,6 +22,26 @@ export default async function NewMatchGameFormPage({
   const supabase = await createClient();
   const locale = await getLocale();
   const dict = getDictionary(locale);
+
+  // 게스트(익명) 세션은 매치를 저장할 수 없으므로, 폼을 채웠다가 저장 시점에
+  // 막히는 대신 입력을 시작하기 전에 회원가입 안내로 보낸다. URL을 직접
+  // 입력해서 들어오는 경로도 있어 대시보드 버튼과 별개로 여기서도 확인한다.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user?.is_anonymous === true) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-2xl font-semibold text-zinc-50">
+            {dict.newMatch.title}
+          </h1>
+        </div>
+        <GuestGate dict={dict} />
+      </div>
+    );
+  }
 
   const { data: game, error: gameError } = await supabase
     .from("games")

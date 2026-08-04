@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export type AuthFormState = { error?: string; message?: string } | undefined;
 
@@ -68,8 +69,43 @@ export async function signUp(
   redirect("/dashboard");
 }
 
+/**
+ * 게스트(익명) 계정은 매치를 기록할 수 없으므로(매치는 항상 회원 소유),
+ * 로그아웃 시 계정 자체를 지워도 전적 데이터 유실 위험이 없다. Supabase는
+ * 별도 타임박스를 설정하지 않는 한 익명 세션의 refresh token을 자동
+ * 만료시키지 않아 auth.users에 계속 쌓이므로, 로그아웃 시점에 정리한다.
+ *
+ * service-role 삭제가 실패해도(키 미설정, admin API 에러 등) 로그아웃
+ * 자체는 항상 정상적으로 진행돼야 한다 — 로그아웃 버튼이 먹통이 되면 안
+ * 된다.
+ */
 export async function signOut() {
   const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user?.is_anonymous) {
+    try {
+      const adminClient = createAdminClient();
+      if (!adminClient) {
+        console.error(
+          "게스트 계정 삭제 실패: SUPABASE_SERVICE_ROLE_KEY가 설정되어 있지 않습니다.",
+        );
+      } else {
+        const { error } = await adminClient.auth.admin.deleteUser(user.id);
+        if (error) {
+          console.error("게스트 계정 삭제 실패:", error.message);
+        }
+      }
+    } catch (err) {
+      // service-role 삭제가 어떤 이유로든 실패해도 로그아웃 자체는 반드시
+      // 진행되어야 한다 (로그아웃 버튼이 먹통이 되면 안 된다).
+      console.error("게스트 계정 삭제 중 예외 발생:", err);
+    }
+  }
+
   await supabase.auth.signOut();
   redirect("/login");
 }
