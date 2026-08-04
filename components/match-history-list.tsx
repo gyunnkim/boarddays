@@ -35,10 +35,10 @@ export function MatchHistoryList({
             entry.players[entry.players.length - 1]?.rank ?? entry.myRank;
           const cardTone =
             entry.myRank === 1
-              ? "border-l-4 border-l-amber-500 border-y border-r border-stone-800 bg-amber-500/10"
+              ? "border-l-4 border-l-blue-500 border-y border-r border-stone-800 bg-blue-500/10"
               : entry.myRank === lastRank
                 ? "border-l-4 border-l-red-500 border-y border-r border-stone-800 bg-red-500/10"
-                : "border-l-4 border-l-stone-500 border-y border-r border-stone-800 bg-stone-500/10";
+                : "border-l-4 border-l-yellow-500 border-y border-r border-stone-800 bg-yellow-500/10";
 
           return (
             <li key={entry.matchId} className={`rounded-xl p-4 sm:p-5 ${cardTone}`}>
