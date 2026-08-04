@@ -42,10 +42,7 @@ export default async function DashboardPage({
     { data: viewerProfile, error: viewerProfileError },
   ] = await runWithAuthRetry(() =>
     Promise.all([
-      supabase
-        .from("games")
-        .select("id, slug, name_ko, name_en")
-        .order("slug"),
+      supabase.from("games").select("id, slug, name_ko, name_en").order("slug"),
       // RLS(matches_select_owner_or_name_match 경유)가 본인 소유 매치뿐
       // 아니라, 로그인한 사용자의 표시 이름과 같은 이름의 플레이어가 등장하는
       // 매치도 함께 노출한다.
@@ -60,7 +57,11 @@ export default async function DashboardPage({
       supabase.from("match_expansions").select("match_id, expansion_id"),
       supabase.from("expansions").select("id, name_ko, name_en"),
       user
-        ? supabase.from("profiles").select("display_name").eq("id", user.id).single()
+        ? supabase
+            .from("profiles")
+            .select("display_name")
+            .eq("id", user.id)
+            .single()
         : Promise.resolve({ data: null, error: null }),
     ]),
   );
@@ -150,12 +151,26 @@ export default async function DashboardPage({
             {dict.dashboard.subtitle}
           </p>
         </div>
-        <Link
-          href="/dashboard/matches/new"
-          className="rounded-md bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-zinc-200"
-        >
-          {dict.dashboard.newMatch}
-        </Link>
+        {user?.is_anonymous === true ? (
+          <div className="flex flex-col items-end gap-1">
+            <Link
+              href="/signup"
+              className="rounded-md bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-zinc-200"
+            >
+              {dict.dashboard.guestSignupCta}
+            </Link>
+            <p className="text-xs text-zinc-500">
+              {dict.dashboard.guestNewMatchHint}
+            </p>
+          </div>
+        ) : (
+          <Link
+            href="/dashboard/matches/new"
+            className="rounded-md bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-950 transition-colors hover:bg-zinc-200"
+          >
+            {dict.dashboard.newMatch}
+          </Link>
+        )}
       </div>
 
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-6">
@@ -174,7 +189,9 @@ export default async function DashboardPage({
         <h2 className="text-lg font-medium text-zinc-100">
           {dict.dashboard.perGameTitle}
         </h2>
-        <p className="mt-1 text-sm text-zinc-500">{dict.dashboard.perGameHint}</p>
+        <p className="mt-1 text-sm text-zinc-500">
+          {dict.dashboard.perGameHint}
+        </p>
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {stats.perGame.map(({ game, totalMatches, winRate }) => {
             const isActive = selectedGame?.id === game.id;

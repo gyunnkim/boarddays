@@ -30,6 +30,8 @@ export interface Dictionary {
     comingSoon: string;
     you: string;
     loadMore: string;
+    guestNewMatchHint: string;
+    guestSignupCta: string;
   };
   login: {
     heading: string;
@@ -71,6 +73,12 @@ export interface Dictionary {
     title: string;
     subtitle: string;
     fillHint: string;
+  };
+  guestGate: {
+    title: string;
+    description: string;
+    cta: string;
+    back: string;
   };
   matchForm: {
     expansionsUsed: string;
@@ -124,6 +132,9 @@ const ko: Dictionary = {
     comingSoon: "준비 중",
     you: "나",
     loadMore: "더보기",
+    guestNewMatchHint:
+      "게스트는 전적을 기록할 수 없어요. 회원가입하면 저장할 수 있습니다.",
+    guestSignupCta: "회원가입하고 기록하기",
   },
   login: {
     heading: "로그인",
@@ -168,6 +179,13 @@ const ko: Dictionary = {
     subtitle: "먼저 플레이한 게임을 선택하세요.",
     fillHint: "사용한 확장팩과 플레이어별 결과를 입력하세요.",
   },
+  guestGate: {
+    title: "회원가입이 필요해요",
+    description:
+      "게스트 계정은 전적을 기록할 수 없습니다. 회원가입하면 매치를 저장하고 계속 확인할 수 있어요.",
+    cta: "회원가입하기",
+    back: "대시보드로 돌아가기",
+  },
   matchForm: {
     expansionsUsed: "사용한 확장팩",
     map: "맵 추가",
@@ -202,7 +220,8 @@ const en: Dictionary = {
     subtitle: "See all of your recorded matches at a glance.",
     newMatch: "Log new match",
     record: "Record",
-    overallSummaryTemplate: "{total} games · {wins}W {losses}L · {rate} win rate",
+    overallSummaryTemplate:
+      "{total} games · {wins}W {losses}L · {rate} win rate",
     perGameTitle: "By game",
     perGameHint:
       "Click a game to filter the match history below to just that game. Click again to clear the filter.",
@@ -219,6 +238,9 @@ const en: Dictionary = {
     comingSoon: "Coming soon",
     you: "You",
     loadMore: "Load more",
+    guestNewMatchHint:
+      "Guests can't record matches. Sign up to save your results.",
+    guestSignupCta: "Sign up to record",
   },
   login: {
     heading: "Log in",
@@ -252,7 +274,7 @@ const en: Dictionary = {
       'Set the name used to identify "me" in the match entry screen. Each person may only have one name, and it must be unique across boarddays.',
     myNameTitle: "My name",
     noNameSet:
-      'You haven\'t set a name yet. Until you do, "me" won\'t be auto-filled in the match entry screen.',
+      "You haven't set a name yet. Until you do, \"me\" won't be auto-filled in the match entry screen.",
     namePlaceholder: "e.g. Alex",
     saving: "Saving...",
     save: "Save",
@@ -262,6 +284,13 @@ const en: Dictionary = {
     title: "Log new match",
     subtitle: "First, choose the game you played.",
     fillHint: "Enter the expansions used and each player's result.",
+  },
+  guestGate: {
+    title: "Sign up required",
+    description:
+      "Guest accounts can't record matches. Sign up to save and keep track of your matches.",
+    cta: "Sign up",
+    back: "Back to dashboard",
   },
   matchForm: {
     expansionsUsed: "Expansions used",
