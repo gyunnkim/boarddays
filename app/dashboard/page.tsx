@@ -225,6 +225,14 @@ export default async function DashboardPage({
         ),
     );
 
+  // 상단 "전적" 요약은 게임/맵/기업 필터가 걸려 있으면 그 필터를 통과한
+  // 매치만으로 다시 계산한다(필터 없으면 buildMatchHistory가 만든 목록
+  // 전체이므로 결과적으로 전체 전적과 같다).
+  const isFiltered = Boolean(selectedSlug || selectedMapSlug || selectedCorpSlug);
+  const summaryTotal = visibleHistory.length;
+  const summaryWins = visibleHistory.filter((entry) => entry.isWin).length;
+  const summaryWinRate = summaryTotal > 0 ? summaryWins / summaryTotal : null;
+
   function buildHistoryHref(overrides: {
     map?: string | null;
     corp?: string | null;
@@ -283,13 +291,20 @@ export default async function DashboardPage({
       </div>
 
       <div className="rounded-xl border border-stone-800 bg-stone-900/60 p-6">
-        <p className="text-sm text-stone-400">{dict.dashboard.record}</p>
+        <p className="text-sm text-stone-400">
+          {dict.dashboard.record}
+          {isFiltered && (
+            <span className="ml-2 text-xs text-stone-500">
+              {dict.dashboard.recordFilteredHint}
+            </span>
+          )}
+        </p>
         <p className="mt-2 text-3xl font-semibold text-stone-50">
           {formatTemplate(dict.dashboard.overallSummaryTemplate, {
-            total: stats.totalMatches,
-            wins: stats.totalWins,
-            losses: stats.totalMatches - stats.totalWins,
-            rate: formatPercent(stats.overallWinRate),
+            total: summaryTotal,
+            wins: summaryWins,
+            losses: summaryTotal - summaryWins,
+            rate: formatPercent(summaryWinRate),
           })}
         </p>
       </div>
