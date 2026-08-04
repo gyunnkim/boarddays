@@ -42,7 +42,7 @@ interface FactionOption {
 
 interface MapOption {
   id: string;
-  expansion_id: string | null;
+  map_group_slug: string | null;
   slug: string;
   name_ko: string;
   name_en: string;
@@ -108,14 +108,21 @@ export function MatchForm({
     () => new Set(),
   );
   const [mapId, setMapId] = useState<string | null>(null);
+  const [enabledMapGroups, setEnabledMapGroups] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [promoFactionsOn, setPromoFactionsOn] = useState(false);
   const [drawnColonyIds, setDrawnColonyIds] = useState<string[]>([]);
   const [scoreValuesByRow, setScoreValuesByRow] = useState<
     Record<string, Record<string, string>>
   >({});
 
-  const availableFactions = factions.filter(
-    (f) => f.expansion_id === null || expansionIds.includes(f.expansion_id),
-  );
+  const availableFactions = factions.filter((f) => {
+    if (capability.promoFactions && f.group_slug === capability.promoFactions.groupSlug) {
+      return promoFactionsOn;
+    }
+    return f.expansion_id === null || expansionIds.includes(f.expansion_id);
+  });
 
   // 확장팩 선택이 바뀌어 더 이상 선택 불가능해진 값은 렌더링 시점에 걸러낸다
   // (effect에서 setState로 동기화하지 않고 파생값으로 계산).
@@ -146,7 +153,7 @@ export function MatchForm({
   );
 
   const availableMaps = maps.filter(
-    (m) => m.expansion_id === null || expansionIds.includes(m.expansion_id),
+    (m) => m.map_group_slug === null || enabledMapGroups.has(m.map_group_slug),
   );
   const effectiveMapId = availableMaps.some((m) => m.id === mapId)
     ? mapId
@@ -165,6 +172,18 @@ export function MatchForm({
     setExpansionIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
+  }
+
+  function toggleMapGroup(slug: string) {
+    setEnabledMapGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(slug)) {
+        next.delete(slug);
+      } else {
+        next.add(slug);
+      }
+      return next;
+    });
   }
 
   function addPlayer() {
@@ -376,11 +395,46 @@ export function MatchForm({
         </fieldset>
       )}
 
+      {capability.promoFactions && (
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="flex items-center gap-2 rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-200">
+            <input
+              type="checkbox"
+              checked={promoFactionsOn}
+              onChange={() => setPromoFactionsOn((prev) => !prev)}
+            />
+            {capability.promoFactions.labelKo}
+          </label>
+          <input
+            type="hidden"
+            name="include_promo_factions"
+            value={promoFactionsOn ? "true" : "false"}
+          />
+        </div>
+      )}
+
       {capability.hasMapSelection && (
         <fieldset className="space-y-3">
           <legend className="text-sm font-medium text-zinc-200">
             {dict.map}
           </legend>
+          {capability.mapGroups && capability.mapGroups.length > 0 && (
+            <div className="flex flex-wrap gap-3">
+              {capability.mapGroups.map((group) => (
+                <label
+                  key={group.slug}
+                  className="flex items-center gap-2 rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-200"
+                >
+                  <input
+                    type="checkbox"
+                    checked={enabledMapGroups.has(group.slug)}
+                    onChange={() => toggleMapGroup(group.slug)}
+                  />
+                  {group.labelKo}
+                </label>
+              ))}
+            </div>
+          )}
           <div className="flex flex-wrap items-center gap-3">
             <select
               name="terraforming_mars_map_id"

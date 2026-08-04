@@ -22,6 +22,28 @@ export interface ColonyDrawConfig {
   countOffset: number;
 }
 
+export interface MapGroupOption {
+  /**
+   * 매치 입력 화면 "맵 추가" 탭의 토글 식별자. `expansions` 테이블과 무관한
+   * 독립 slug로, 이 값을 가진 맵 카탈로그 행(예: terraforming_mars_maps의
+   * map_group_slug)을 켜고 끈다.
+   */
+  slug: string;
+  labelKo: string;
+}
+
+export interface PromoFactionsConfig {
+  /** "프로모 기업 추가" 토글 버튼에 표시할 라벨. */
+  labelKo: string;
+  /**
+   * 이 값을 group_slug로 가진 진영(player_factions) 행은 토글이 켜져 있을
+   * 때만 선택지에 노출된다. 확장팩이 아니므로 match_expansions에는 반영하지
+   * 않고, matches의 별도 boolean 컬럼(예: include_promo_factions)에 온/오프
+   * 여부를 저장한다.
+   */
+  groupSlug: string;
+}
+
 export interface GameCapability {
   hasFactions: boolean;
   factionLabel?: string;
@@ -45,8 +67,20 @@ export interface GameCapability {
   scoreComponents?: ScoreComponentConfig[];
   /** 있으면 매치 단위로 맵을 선택(직접 선택 또는 랜덤 선택)하는 UI를 켠다. */
   hasMapSelection?: boolean;
+  /**
+   * 있으면 hasMapSelection UI를 "맵 추가" 탭으로 표시하고, 여기 정의된 각
+   * 항목을 토글로 켜고 끌 수 있게 한다. 토글과 무관한 기본 맵은 항상 풀에
+   * 포함되고, 각 토글을 켜면 해당 slug의 맵이 풀에 추가된다. 맵 랜덤 선택은
+   * 그 시점에 켜진 토글로 결정된 풀 안에서만 동작한다.
+   */
+  mapGroups?: MapGroupOption[];
   /** 있으면 조건을 만족하는 확장팩이 선택된 매치에서 개척기지 뽑기 UI를 켠다. */
   colonyDraw?: ColonyDrawConfig;
+  /**
+   * 있으면 "프로모 기업 추가" 토글 UI를 켠다. hasFactions가 true인 게임에서만
+   * 의미가 있다.
+   */
+  promoFactions?: PromoFactionsConfig;
 }
 
 /**
@@ -110,7 +144,19 @@ export function getGameCapability(slug: string): GameCapability | null {
           },
         ],
         hasMapSelection: true,
+        // 헬라스&엘리시움/아마조니스&보레알리스/유토피아&킴메리아는 확장팩
+        // 엔티티가 아니라 맵 추가 탭의 토글이다(사용자 확정,
+        // docs/games/terraforming-mars.md "맵 옵션(확장과 무관)" 참고). slug는
+        // terraforming_mars_maps.map_group_slug와 일치해야 한다.
+        mapGroups: [
+          { slug: "hellas-elysium", labelKo: "헬라스 & 엘리시움" },
+          { slug: "amazonis-borealis", labelKo: "아마조니스 & 보레알리스" },
+          { slug: "utopia-kimmeria", labelKo: "유토피아 & 킴메리아" },
+        ],
         colonyDraw: { expansionSlug: "colonies", countOffset: 2 },
+        // 프로모 기업 10종은 확장팩이 아니다(사용자 확정). groupSlug는
+        // player_factions.group_slug='promo'와 일치해야 한다.
+        promoFactions: { labelKo: "프로모 기업 추가", groupSlug: "promo" },
       };
     default:
       return null;

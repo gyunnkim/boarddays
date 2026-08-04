@@ -59,7 +59,7 @@ export default async function NewMatchGameFormPage({
     capability.hasMapSelection
       ? supabase
           .from("terraforming_mars_maps")
-          .select("id, expansion_id, slug, name_ko, name_en")
+          .select("id, map_group_slug, slug, name_ko, name_en")
           .order("slug")
       : Promise.resolve({ data: [], error: null }),
     capability.colonyDraw

@@ -216,6 +216,14 @@ export async function createMatch(
     selectedExpansionSlugs = new Set(expansionRows.map((e) => e.slug));
   }
 
+  // 프로모 기업 사용 여부. 확장팩이 아니므로 match_expansions가 아니라
+  // matches.include_promo_factions에 저장한다 (docs/games/terraforming-mars.md
+  // "프로모 기업 (확장 아님)" 참고). capability.promoFactions가 없는
+  // 게임(듄/SETI)에서는 항상 false로 남는다.
+  const includePromoFactions =
+    Boolean(capability.promoFactions) &&
+    formData.get("include_promo_factions") === "true";
+
   const mapIdRaw = formData.get("terraforming_mars_map_id");
   const mapId =
     capability.hasMapSelection && typeof mapIdRaw === "string" && mapIdRaw
@@ -274,7 +282,11 @@ export async function createMatch(
 
   const { data: match, error: matchError } = await supabase
     .from("matches")
-    .insert({ user_id: user.id, game_id: game.id })
+    .insert({
+      user_id: user.id,
+      game_id: game.id,
+      include_promo_factions: includePromoFactions,
+    })
     .select("id")
     .single();
 
