@@ -28,6 +28,7 @@ export interface Dictionary {
     historyEmptyFiltered: string;
     comingSoon: string;
     you: string;
+    loadMore: string;
   };
   login: {
     heading: string;
@@ -121,6 +122,7 @@ const ko: Dictionary = {
     historyEmptyFiltered: "이 게임으로 기록한 매치가 없습니다.",
     comingSoon: "준비 중",
     you: "나",
+    loadMore: "더보기",
   },
   login: {
     heading: "로그인",
@@ -215,6 +217,7 @@ const en: Dictionary = {
     historyEmptyFiltered: "No matches recorded for this game yet.",
     comingSoon: "Coming soon",
     you: "You",
+    loadMore: "Load more",
   },
   login: {
     heading: "Log in",
