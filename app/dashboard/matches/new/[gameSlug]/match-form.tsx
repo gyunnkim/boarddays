@@ -1,13 +1,19 @@
 "use client";
 
-import { useActionState, useId, useMemo, useState } from "react";
+import {
+  useActionState,
+  useId,
+  useMemo,
+  useState,
+  type FormEvent,
+} from "react";
 import { createMatch } from "../../actions";
 import type { GameCapability } from "@/lib/domain/capabilities";
 import type { Locale } from "@/lib/i18n/config";
 import { pickLocalized } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionary";
 import { formatTemplate } from "@/lib/i18n/format";
-import { PlayerColorSwatch } from "@/components/player-color-swatch";
+import { PlayerColorPicker } from "@/components/player-color-picker";
 
 interface GameOption {
   id: string;
@@ -98,6 +104,9 @@ export function MatchForm({
     {},
   );
   const [colorByRow, setColorByRow] = useState<Record<string, string>>({});
+  const [colorErrorRowIds, setColorErrorRowIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [mapId, setMapId] = useState<string | null>(null);
   const [drawnColonyIds, setDrawnColonyIds] = useState<string[]>([]);
   const [scoreValuesByRow, setScoreValuesByRow] = useState<
@@ -126,6 +135,11 @@ export function MatchForm({
       ),
     [expansions, expansionIds],
   );
+
+  const factionsEnabled =
+    capability.hasFactions &&
+    (!capability.factionsRequireExpansionSlug ||
+      selectedExpansionSlugs.has(capability.factionsRequireExpansionSlug));
 
   const activeScoreComponents = (capability.scoreComponents ?? []).filter(
     (c) => !c.requiresExpansionSlug || selectedExpansionSlugs.has(c.requiresExpansionSlug),
@@ -171,6 +185,12 @@ export function MatchForm({
     setColorByRow((prev) => {
       const next = { ...prev };
       delete next[id];
+      return next;
+    });
+    setColorErrorRowIds((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
       return next;
     });
     setScoreValuesByRow((prev) => {
@@ -242,6 +262,27 @@ export function MatchForm({
     return capability.playerColors.filter((c) => !takenByOthers.has(c.value));
   }
 
+  function setPlayerColor(rowId: string, value: string) {
+    setColorByRow((prev) => ({ ...prev, [rowId]: value }));
+    setColorErrorRowIds((prev) => {
+      if (!prev.has(rowId)) return prev;
+      const next = new Set(prev);
+      next.delete(rowId);
+      return next;
+    });
+  }
+
+  // 색상 값은 hidden input(type="hidden")으로 제출되는데, hidden 타입은 HTML
+  // 명세상 constraint validation 대상에서 제외돼 required가 동작하지 않는다.
+  // 그래서 색상 누락 여부만 제출 시점에 별도로 검사해 폼 제출을 막는다.
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    if (!capability.playerColors) return;
+    const missing = players.filter((row) => !colorByRow[row.id]);
+    if (missing.length === 0) return;
+    event.preventDefault();
+    setColorErrorRowIds(new Set(missing.map((row) => row.id)));
+  }
+
   function renderFactionSelect(rowId: string) {
     const options = factionOptionsForRow(rowId);
     const groups = new Map<string, { label: string; options: FactionOption[] }>();
@@ -298,6 +339,7 @@ export function MatchForm({
   return (
     <form
       action={action}
+      onSubmit={handleSubmit}
       className="space-y-8 rounded-xl border border-zinc-800 bg-zinc-900/60 p-6"
     >
       <input type="hidden" name="game_id" value={game.id} />
@@ -452,7 +494,19 @@ export function MatchForm({
                   </span>
 
                   {capability.playerColors && (
-                    <PlayerColorSwatch color={colorByRow[row.id]} />
+                    <div className="shrink-0 space-y-1">
+                      <span className="block text-xs text-zinc-400">
+                        {dict.color}
+                      </span>
+                      <PlayerColorPicker
+                        name={`player_color_${row.id}`}
+                        value={colorByRow[row.id]}
+                        options={colorOptionsForRow(row.id)}
+                        onChange={(value) => setPlayerColor(row.id, value)}
+                        triggerLabel={dict.selectColor}
+                        invalid={colorErrorRowIds.has(row.id)}
+                      />
+                    </div>
                   )}
 
                   <div className="min-w-[9rem] flex-1 space-y-1">
@@ -474,34 +528,7 @@ export function MatchForm({
                     />
                   </div>
 
-                  {capability.playerColors && (
-                    <div className="w-36 space-y-1">
-                      <label className="text-xs text-zinc-400">
-                        {dict.color}
-                      </label>
-                      <select
-                        name={`player_color_${row.id}`}
-                        value={colorByRow[row.id] ?? ""}
-                        onChange={(e) =>
-                          setColorByRow((prev) => ({
-                            ...prev,
-                            [row.id]: e.target.value,
-                          }))
-                        }
-                        required
-                        className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-zinc-400"
-                      >
-                        <option value="">{dict.selectColor}</option>
-                        {colorOptionsForRow(row.id).map((c) => (
-                          <option key={c.value} value={c.value}>
-                            {c.labelKo}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  {capability.hasFactions && (
+                  {factionsEnabled && (
                     <div className="min-w-[10rem] flex-1 space-y-1">
                       <label className="text-xs text-zinc-400">
                         {capability.factionLabel ?? "진영"}
@@ -626,6 +653,10 @@ export function MatchForm({
           })}
         </div>
       </fieldset>
+
+      {colorErrorRowIds.size > 0 && (
+        <p className="text-sm text-red-400">{dict.colorRequired}</p>
+      )}
 
       {state?.error && <p className="text-sm text-red-400">{state.error}</p>}
 

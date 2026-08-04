@@ -87,6 +87,7 @@ export interface Dictionary {
     namePlaceholder: string;
     color: string;
     selectColor: string;
+    colorRequired: string;
     score: string;
     total: string;
     saving: string;
@@ -180,6 +181,7 @@ const ko: Dictionary = {
     namePlaceholder: "이름을 선택하거나 입력하세요",
     color: "색상",
     selectColor: "색상 선택",
+    colorRequired: "색상을 선택해 주세요.",
     score: "점수",
     total: "총점",
     saving: "저장 중...",
@@ -273,6 +275,7 @@ const en: Dictionary = {
     namePlaceholder: "Choose or enter a name",
     color: "Color",
     selectColor: "Select a color",
+    colorRequired: "Please select a color.",
     score: "Score",
     total: "Total",
     saving: "Saving...",
