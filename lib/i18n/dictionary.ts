@@ -19,6 +19,9 @@ export interface Dictionary {
     playedSummaryTemplate: string;
     historyTitle: string;
     showAll: string;
+    mapFilterLabel: string;
+    factionFilterLabel: string;
+    filterAll: string;
     win: string;
     lose: string;
     /** placeholder: {n} */
@@ -125,6 +128,9 @@ const ko: Dictionary = {
     playedSummaryTemplate: "플레이 {count}회 · 승률 {rate}",
     historyTitle: "전적 기록",
     showAll: "전체 보기",
+    mapFilterLabel: "맵",
+    factionFilterLabel: "진영",
+    filterAll: "전체",
     win: "승",
     lose: "패",
     rankTemplate: "{n}위",
@@ -234,6 +240,9 @@ const en: Dictionary = {
     playedSummaryTemplate: "{count} played · {rate} win rate",
     historyTitle: "Match history",
     showAll: "Show all",
+    mapFilterLabel: "Map",
+    factionFilterLabel: "Faction",
+    filterAll: "All",
     win: "Win",
     lose: "Loss",
     rankTemplate: "#{n}",
