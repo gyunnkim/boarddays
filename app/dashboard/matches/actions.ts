@@ -6,6 +6,23 @@ import { getGameCapability, type GameCapability } from "@/lib/domain/capabilitie
 
 export type CreateMatchState = { error?: string } | undefined;
 
+/**
+ * hasFactions가 true여도 factionsRequireExpansionSlug가 설정된 게임(SETI
+ * 기관)은 해당 확장팩이 선택된 매치에서만 진영 선택을 필수로 요구한다.
+ * match-form.tsx의 factionsEnabled 계산과 동일한 규칙을 서버에서도 적용해
+ * 클라이언트가 렌더링하지 않은 필드를 필수값으로 오판하지 않게 한다.
+ */
+function factionsEnabled(
+  capability: GameCapability,
+  selectedExpansionSlugs: Set<string>,
+): boolean {
+  return (
+    capability.hasFactions &&
+    (!capability.factionsRequireExpansionSlug ||
+      selectedExpansionSlugs.has(capability.factionsRequireExpansionSlug))
+  );
+}
+
 interface ParsedPlayer {
   id: string;
   name: string;
@@ -28,12 +45,13 @@ function parsePlayers(
     const name = formData.get(`player_name_${id}`);
     if (typeof name !== "string" || !name.trim()) return null;
 
+    const factionsOn = factionsEnabled(capability, selectedExpansionSlugs);
     const factionRaw = formData.get(`player_faction_${id}`);
     const factionId =
-      capability.hasFactions && typeof factionRaw === "string" && factionRaw
+      factionsOn && typeof factionRaw === "string" && factionRaw
         ? factionRaw
         : null;
-    if (capability.hasFactions && !factionId) return null;
+    if (factionsOn && !factionId) return null;
 
     let color: string | null = null;
     if (capability.playerColors) {
@@ -238,7 +256,7 @@ export async function createMatch(
   }
   const meId = meMatches[0]?.id ?? null;
 
-  if (capability.hasFactions) {
+  if (factionsEnabled(capability, selectedExpansionSlugs)) {
     const factionIds = players.map((p) => p.factionId);
     if (new Set(factionIds).size !== factionIds.length) {
       return {

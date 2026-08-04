@@ -25,6 +25,14 @@ export interface ColonyDrawConfig {
 export interface GameCapability {
   hasFactions: boolean;
   factionLabel?: string;
+  /**
+   * 있으면 hasFactions가 true여도 이 확장팩 slug가 매치에 선택된 경우에만
+   * 진영 선택 UI를 표시하고 필수값으로 요구한다 (예: SETI의 기관은
+   * 우주기관 확장 전용이라 기본판에는 진영 자체가 존재하지 않는다). 없으면
+   * hasFactions만으로 항상 켠다 (듄/테라포밍 마스처럼 확장 없이도 선택 가능한
+   * 진영이 있는 경우).
+   */
+  factionsRequireExpansionSlug?: string;
   /** 있으면 플레이어별 색상 선택 UI를 켠다 (예: 테라포밍 마스). */
   playerColors?: PlayerColorOption[];
   /** 있으면 플레이어별 메가크레딧(자원) 입력 필드를 켠다. */
@@ -61,7 +69,9 @@ export function getGameCapability(slug: string): GameCapability | null {
       };
     case "seti":
       return {
-        hasFactions: false,
+        hasFactions: true,
+        factionLabel: "기관",
+        factionsRequireExpansionSlug: "space-agencies",
         playerColors: [
           { value: "beige", labelKo: "베이지" },
           { value: "brown", labelKo: "갈색" },
