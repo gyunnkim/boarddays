@@ -54,6 +54,7 @@ export default async function NewMatchGameFormPage({
           )
           .eq("game_id", game.id)
           .order("group_slug")
+          .order("name_en")
       : Promise.resolve({ data: [], error: null }),
     supabase.from("profiles").select("display_name").maybeSingle(),
     capability.hasMapSelection
