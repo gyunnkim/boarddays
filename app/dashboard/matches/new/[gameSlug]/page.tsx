@@ -34,7 +34,7 @@ export default async function NewMatchGameFormPage({
     return (
       <div className="space-y-8">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-50">
+          <h1 className="text-2xl font-semibold text-stone-50">
             {dict.newMatch.title}
           </h1>
         </div>
@@ -132,10 +132,10 @@ export default async function NewMatchGameFormPage({
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-50">
+        <h1 className="text-2xl font-semibold text-stone-50">
           {pickLocalized(locale, game.name_ko, game.name_en)}
         </h1>
-        <p className="mt-1 text-sm text-zinc-400">{dict.newMatch.fillHint}</p>
+        <p className="mt-1 text-sm text-stone-400">{dict.newMatch.fillHint}</p>
       </div>
 
       <MatchForm

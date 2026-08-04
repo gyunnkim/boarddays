@@ -26,10 +26,10 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
-      <header className="flex items-center justify-between border-b border-zinc-800 px-6 py-4">
+      <header className="flex items-center justify-between border-b border-stone-800 px-6 py-4">
         <Link
           href="/dashboard"
-          className="text-sm font-semibold tracking-tight text-zinc-50 transition-colors hover:text-zinc-300"
+          className="text-sm font-semibold tracking-tight text-stone-50 transition-colors hover:text-stone-300"
         >
           boarddays
         </Link>
@@ -37,14 +37,14 @@ export default async function DashboardLayout({
           <LocaleToggle locale={locale} />
           <Link
             href="/dashboard/settings"
-            className="text-sm text-zinc-400 transition-colors hover:text-zinc-100"
+            className="text-sm text-stone-400 transition-colors hover:text-stone-100"
           >
             {dict.header.settings}
           </Link>
           <form action={signOut}>
             <button
               type="submit"
-              className="text-sm text-zinc-400 transition-colors hover:text-zinc-100"
+              className="text-sm text-stone-400 transition-colors hover:text-stone-100"
             >
               {dict.header.logout}
             </button>

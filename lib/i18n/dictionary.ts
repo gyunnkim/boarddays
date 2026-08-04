@@ -48,6 +48,9 @@ export interface Dictionary {
     heading: string;
     subheading: string;
     email: string;
+    name: string;
+    namePlaceholder: string;
+    nameHint: string;
     password: string;
     passwordHint: string;
     submitting: string;
@@ -56,6 +59,8 @@ export interface Dictionary {
     loginLink: string;
   };
   guest: {
+    name: string;
+    namePlaceholder: string;
     submitting: string;
     submit: string;
   };
@@ -64,10 +69,7 @@ export interface Dictionary {
     description: string;
     myNameTitle: string;
     noNameSet: string;
-    namePlaceholder: string;
-    saving: string;
-    save: string;
-    saved: string;
+    readonlyHint: string;
   };
   newMatch: {
     title: string;
@@ -151,6 +153,10 @@ const ko: Dictionary = {
     heading: "회원가입",
     subheading: "boarddays 계정을 만드세요.",
     email: "이메일",
+    name: "이름",
+    namePlaceholder: "예: 김보드",
+    nameHint:
+      '매치 입력 화면에서 "나"를 식별하는 데 쓰이는 이름입니다. boarddays 서비스 전체에서 유일해야 하며, 가입 후에는 변경할 수 없습니다.',
     password: "비밀번호",
     passwordHint: "6자 이상 입력해 주세요.",
     submitting: "가입 중...",
@@ -159,20 +165,19 @@ const ko: Dictionary = {
     loginLink: "로그인",
   },
   guest: {
+    name: "이름",
+    namePlaceholder: "예: 김보드",
     submitting: "입장 중...",
     submit: "게스트로 시작하기",
   },
   settings: {
     title: "설정",
     description:
-      '매치 입력 화면에서 "나"를 식별하는 데 쓰이는 이름을 설정하세요. 이 이름은 한 명당 하나만 가질 수 있고, boarddays 서비스 전체에서 유일해야 합니다.',
+      '매치 입력 화면에서 "나"를 식별하는 데 쓰이는 이름입니다. 이 이름은 가입/게스트 입장 시점에 한 번만 정할 수 있고, 이후에는 변경할 수 없습니다.',
     myNameTitle: "내 이름",
-    noNameSet:
-      '아직 이름을 설정하지 않았습니다. 이름을 설정하기 전에는 매치 입력 화면에서 "나"가 자동으로 표시되지 않습니다.',
-    namePlaceholder: "예: 김보드",
-    saving: "저장 중...",
-    save: "저장",
-    saved: "이름을 저장했습니다.",
+    noNameSet: "설정된 이름이 없습니다.",
+    readonlyHint:
+      '이름은 가입할 때 한 번만 정할 수 있으며, 이후에는 이 화면에서 수정할 수 없습니다.',
   },
   newMatch: {
     title: "새 매치 기록",
@@ -257,6 +262,10 @@ const en: Dictionary = {
     heading: "Sign up",
     subheading: "Create your boarddays account.",
     email: "Email",
+    name: "Name",
+    namePlaceholder: "e.g. Alex",
+    nameHint:
+      'Used to identify "me" in the match entry screen. It must be unique across boarddays and can\'t be changed after sign up.',
     password: "Password",
     passwordHint: "Use at least 6 characters.",
     submitting: "Signing up...",
@@ -265,20 +274,19 @@ const en: Dictionary = {
     loginLink: "Log in",
   },
   guest: {
+    name: "Name",
+    namePlaceholder: "e.g. Alex",
     submitting: "Entering...",
     submit: "Continue as guest",
   },
   settings: {
     title: "Settings",
     description:
-      'Set the name used to identify "me" in the match entry screen. Each person may only have one name, and it must be unique across boarddays.',
+      'The name used to identify "me" in the match entry screen. It\'s set once when you sign up or enter as a guest, and can\'t be changed afterward.',
     myNameTitle: "My name",
-    noNameSet:
-      "You haven't set a name yet. Until you do, \"me\" won't be auto-filled in the match entry screen.",
-    namePlaceholder: "e.g. Alex",
-    saving: "Saving...",
-    save: "Save",
-    saved: "Name saved.",
+    noNameSet: "No name set.",
+    readonlyHint:
+      "Your name is set once at sign up and can't be edited from this screen.",
   },
   newMatch: {
     title: "Log new match",

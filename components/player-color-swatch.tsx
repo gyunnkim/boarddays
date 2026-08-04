@@ -12,7 +12,7 @@ export function PlayerColorSwatch({ color }: { color?: string | null }) {
     return (
       <span
         aria-hidden
-        className="h-8 w-8 shrink-0 rounded-md border border-dashed border-zinc-700 bg-zinc-900"
+        className="h-8 w-8 shrink-0 rounded-md border border-dashed border-stone-700 bg-stone-900"
       />
     );
   }

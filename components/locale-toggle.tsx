@@ -18,7 +18,7 @@ export function LocaleToggle({ locale }: { locale: Locale }) {
     <div
       role="group"
       aria-label="언어 선택 / Language selection"
-      className="inline-flex items-center overflow-hidden rounded-md border border-zinc-700 text-xs font-medium"
+      className="inline-flex items-center overflow-hidden rounded-md border border-stone-700 text-xs font-medium"
     >
       <button
         type="button"
@@ -27,8 +27,8 @@ export function LocaleToggle({ locale }: { locale: Locale }) {
         disabled={isPending}
         className={`px-2.5 py-1.5 transition-colors disabled:cursor-not-allowed ${
           locale === "ko"
-            ? "bg-zinc-50 text-zinc-950"
-            : "text-zinc-400 hover:text-zinc-100"
+            ? "bg-amber-100 text-stone-950"
+            : "text-stone-400 hover:text-stone-100"
         }`}
       >
         KR
@@ -40,8 +40,8 @@ export function LocaleToggle({ locale }: { locale: Locale }) {
         disabled={isPending}
         className={`px-2.5 py-1.5 transition-colors disabled:cursor-not-allowed ${
           locale === "en"
-            ? "bg-zinc-50 text-zinc-950"
-            : "text-zinc-400 hover:text-zinc-100"
+            ? "bg-amber-100 text-stone-950"
+            : "text-stone-400 hover:text-stone-100"
         }`}
       >
         EN
