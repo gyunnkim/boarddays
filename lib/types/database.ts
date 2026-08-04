@@ -122,6 +122,7 @@ export interface Database {
           game_id: string;
           played_at: string;
           terraforming_mars_map_id: string | null;
+          include_promo_factions: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -131,6 +132,7 @@ export interface Database {
           game_id: string;
           played_at?: string;
           terraforming_mars_map_id?: string | null;
+          include_promo_factions?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -140,6 +142,7 @@ export interface Database {
           game_id?: string;
           played_at?: string;
           terraforming_mars_map_id?: string | null;
+          include_promo_factions?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -208,7 +211,7 @@ export interface Database {
       terraforming_mars_maps: {
         Row: {
           id: string;
-          expansion_id: string | null;
+          map_group_slug: string | null;
           slug: string;
           name_ko: string;
           name_en: string;
@@ -216,7 +219,7 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          expansion_id?: string | null;
+          map_group_slug?: string | null;
           slug: string;
           name_ko: string;
           name_en: string;
@@ -224,7 +227,7 @@ export interface Database {
         };
         Update: {
           id?: string;
-          expansion_id?: string | null;
+          map_group_slug?: string | null;
           slug?: string;
           name_ko?: string;
           name_en?: string;

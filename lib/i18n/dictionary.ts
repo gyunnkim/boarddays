@@ -167,7 +167,7 @@ const ko: Dictionary = {
   },
   matchForm: {
     expansionsUsed: "사용한 확장팩",
-    map: "맵",
+    map: "맵 추가",
     selectMap: "맵 선택",
     randomSelect: "랜덤 선택",
     colonies: "개척기지",
@@ -261,7 +261,7 @@ const en: Dictionary = {
   },
   matchForm: {
     expansionsUsed: "Expansions used",
-    map: "Map",
+    map: "Add maps",
     selectMap: "Select a map",
     randomSelect: "Random",
     colonies: "Colonies",
