@@ -4,6 +4,7 @@ import { runWithAuthRetry } from "@/lib/supabase/with-retry";
 import { buildDashboardStats } from "@/lib/domain/stats";
 import { buildMatchHistory } from "@/lib/domain/match-history";
 import { Badge } from "@/components/badge";
+import { MatchHistoryList } from "@/components/match-history-list";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { pickLocalized } from "@/lib/i18n/config";
@@ -12,10 +13,6 @@ import { formatTemplate } from "@/lib/i18n/format";
 function formatPercent(rate: number | null) {
   if (rate === null) return "—";
   return `${Math.round(rate * 100)}%`;
-}
-
-function formatDate(playedAt: string) {
-  return playedAt.replaceAll("-", ".");
 }
 
 export default async function DashboardPage({
@@ -212,73 +209,12 @@ export default async function DashboardPage({
         </div>
 
         {visibleHistory.length > 0 ? (
-          <ul className="mt-4 space-y-3">
-            {visibleHistory.map((entry) => {
-              const lastRank =
-                entry.players[entry.players.length - 1]?.rank ??
-                entry.myRank;
-              const cardTone =
-                entry.myRank === 1
-                  ? "border-l-4 border-l-sky-500 border-y border-r border-zinc-800 bg-sky-500/10"
-                  : entry.myRank === lastRank
-                    ? "border-l-4 border-l-red-500 border-y border-r border-zinc-800 bg-red-500/10"
-                    : "border-l-4 border-l-yellow-500 border-y border-r border-zinc-800 bg-yellow-500/10";
-
-              return (
-                <li
-                  key={entry.matchId}
-                  className={`rounded-xl p-4 sm:p-5 ${cardTone}`}
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge>
-                        {pickLocalized(locale, entry.game.nameKo, entry.game.nameEn)}
-                      </Badge>
-                      {entry.expansions.map((expansion) => (
-                        <Badge key={expansion.id}>
-                          {pickLocalized(locale, expansion.nameKo, expansion.nameEn)}
-                        </Badge>
-                      ))}
-                    </div>
-                    <span className="text-xs text-zinc-500">
-                      {formatDate(entry.playedAt)}
-                    </span>
-                  </div>
-                  <ul className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
-                    {entry.players.map((player, index) => (
-                      <li
-                        key={`${entry.matchId}-${index}-${player.name}`}
-                        className={
-                          player.isMe
-                            ? "flex items-center gap-1.5 font-medium text-zinc-50"
-                            : "flex items-center gap-1.5 text-zinc-400"
-                        }
-                      >
-                        <span
-                          className={
-                            player.isWin ? "text-emerald-400" : "text-zinc-500"
-                          }
-                        >
-                          {formatTemplate(dict.dashboard.rankTemplate, {
-                            n: player.rank,
-                          })}
-                        </span>
-                        <span>{player.name}</span>
-                        <span>
-                          {formatTemplate(dict.dashboard.scoreTemplate, {
-                            n: player.score,
-                          })}
-                        </span>
-                        {player.isMe && (
-                          <Badge>{dict.dashboard.you}</Badge>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              );
-            })}
-          </ul>
+          <MatchHistoryList
+            key={selectedGame?.slug ?? "all"}
+            entries={visibleHistory}
+            locale={locale}
+            dict={dict}
+          />
         ) : (
           <p className="mt-4 text-sm text-zinc-500">
             {selectedGame
