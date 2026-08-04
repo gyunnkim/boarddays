@@ -1,9 +1,20 @@
 import type { GameCatalogEntry } from "./stats";
 
+/**
+ * 2026년 8월 이전 테라포밍 마스 매치는 확장팩 선택을 정확히 기록하지
+ * 않았다(사용자 확정). 이 시점 이전에 생성된 테라포밍 마스 매치는 확장팩
+ * 배지를 표시하지 않고, 이후 새로 기록되는 매치부터 표시한다. 다른
+ * 게임에는 적용하지 않는다.
+ */
+const TFM_EXPANSION_DISPLAY_CUTOFF = "2026-08-01T00:00:00Z";
+
 export interface MatchRecord {
   id: string;
   gameId: string;
   playedAt: string;
+  createdAt: string;
+  /** 테라포밍 마스 매치가 사용한 맵. 다른 게임이거나 미지정이면 null. */
+  mapId: string | null;
 }
 
 export interface MyMatchResult {
@@ -24,6 +35,18 @@ export interface ExpansionCatalogEntry {
   nameEn: string;
 }
 
+export interface MapCatalogEntry {
+  id: string;
+  nameKo: string;
+  nameEn: string;
+}
+
+export interface FactionCatalogEntry {
+  id: string;
+  nameKo: string;
+  nameEn: string;
+}
+
 export interface MatchPlayerRecord {
   matchId: string;
   name: string;
@@ -31,6 +54,7 @@ export interface MatchPlayerRecord {
   rank: number;
   isWin: boolean;
   isMe: boolean;
+  factionId: string | null;
 }
 
 export interface MatchHistoryPlayer {
@@ -39,6 +63,12 @@ export interface MatchHistoryPlayer {
   rank: number;
   isWin: boolean;
   isMe: boolean;
+  /**
+   * 진영(기업/리더/기관) 표시명. 듄/SETI는 아직 전적 목록에 표시하지
+   * 않기로 했으므로(사용자 확정, 이후 별도 작업) 테라포밍 마스 매치에서만
+   * 채워진다.
+   */
+  faction: FactionCatalogEntry | null;
 }
 
 export interface MatchHistoryEntry {
@@ -49,6 +79,8 @@ export interface MatchHistoryEntry {
   myRank: number;
   isWin: boolean;
   expansions: ExpansionCatalogEntry[];
+  /** 테라포밍 마스 매치가 사용한 맵. 그 외에는 null. */
+  map: MapCatalogEntry | null;
   /** 매치에 참여한 모든 플레이어, 등수(rank) 오름차순 정렬. */
   players: MatchHistoryPlayer[];
 }
@@ -67,10 +99,14 @@ export function buildMatchHistory(
   matchExpansions: MatchExpansionLink[],
   expansionCatalog: ExpansionCatalogEntry[],
   allPlayers: MatchPlayerRecord[] = [],
+  mapCatalog: MapCatalogEntry[] = [],
+  factionCatalog: FactionCatalogEntry[] = [],
 ): MatchHistoryEntry[] {
   const gameById = new Map(games.map((g) => [g.id, g]));
   const matchById = new Map(matches.map((m) => [m.id, m]));
   const expansionById = new Map(expansionCatalog.map((e) => [e.id, e]));
+  const mapById = new Map(mapCatalog.map((m) => [m.id, m]));
+  const factionById = new Map(factionCatalog.map((f) => [f.id, f]));
 
   const expansionsByMatch = new Map<string, ExpansionCatalogEntry[]>();
   for (const link of matchExpansions) {
@@ -82,16 +118,10 @@ export function buildMatchHistory(
     expansionsByMatch.set(link.matchId, list);
   }
 
-  const playersByMatch = new Map<string, MatchHistoryPlayer[]>();
+  const playersByMatch = new Map<string, MatchPlayerRecord[]>();
   for (const player of allPlayers) {
     const list = playersByMatch.get(player.matchId) ?? [];
-    list.push({
-      name: player.name,
-      score: player.score,
-      rank: player.rank,
-      isWin: player.isWin,
-      isMe: player.isMe,
-    });
+    list.push(player);
     playersByMatch.set(player.matchId, list);
   }
   for (const list of playersByMatch.values()) {
@@ -106,15 +136,37 @@ export function buildMatchHistory(
     const game = gameById.get(match.gameId);
     if (!game) continue;
 
+    // 듄/SETI의 리더·기관 표시는 별도 작업에서 진행하기로 했으므로
+    // (사용자 확정), 진영명은 테라포밍 마스 매치에서만 채운다.
+    const isTerraformingMars = game.slug === "terraforming-mars";
+    const showExpansions =
+      !isTerraformingMars ||
+      new Date(match.createdAt) >= new Date(TFM_EXPANSION_DISPLAY_CUTOFF);
+
+    const players: MatchHistoryPlayer[] = (
+      playersByMatch.get(match.id) ?? []
+    ).map((player) => ({
+      name: player.name,
+      score: player.score,
+      rank: player.rank,
+      isWin: player.isWin,
+      isMe: player.isMe,
+      faction:
+        isTerraformingMars && player.factionId
+          ? (factionById.get(player.factionId) ?? null)
+          : null,
+    }));
+
     entries.push({
       matchId: match.id,
       game,
       playedAt: match.playedAt,
       myScore: result.score,
       myRank: result.rank,
+      map: isTerraformingMars && match.mapId ? (mapById.get(match.mapId) ?? null) : null,
+      players,
+      expansions: showExpansions ? (expansionsByMatch.get(match.id) ?? []) : [],
       isWin: result.isWin,
-      expansions: expansionsByMatch.get(match.id) ?? [],
-      players: playersByMatch.get(match.id) ?? [],
     });
   }
 
