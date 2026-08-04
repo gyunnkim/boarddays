@@ -12,6 +12,7 @@ export interface Dictionary {
     record: string;
     /** placeholders: {total}, {wins}, {losses}, {rate} */
     overallSummaryTemplate: string;
+    recordFilteredHint: string;
     perGameTitle: string;
     perGameHint: string;
     noMatchesForGame: string;
@@ -121,6 +122,7 @@ const ko: Dictionary = {
     newMatch: "새 매치 기록",
     record: "전적",
     overallSummaryTemplate: "{total}전 {wins}승 {losses}패 {rate}",
+    recordFilteredHint: "선택한 필터 기준",
     perGameTitle: "게임별 기록",
     perGameHint:
       "게임을 클릭하면 아래 전적 기록을 해당 게임만 필터링해서 볼 수 있어요. 다시 클릭하면 필터가 해제됩니다.",
@@ -233,6 +235,7 @@ const en: Dictionary = {
     record: "Record",
     overallSummaryTemplate:
       "{total} games · {wins}W {losses}L · {rate} win rate",
+    recordFilteredHint: "Based on selected filters",
     perGameTitle: "By game",
     perGameHint:
       "Click a game to filter the match history below to just that game. Click again to clear the filter.",
