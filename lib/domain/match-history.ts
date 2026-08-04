@@ -1,4 +1,5 @@
 import type { GameCatalogEntry } from "./stats";
+import { getGameCapability } from "./capabilities";
 
 /**
  * 2026년 8월 이전에 플레이한 테라포밍 마스 매치는 확장팩 선택을 정확히
@@ -68,9 +69,8 @@ export interface MatchHistoryPlayer {
   isWin: boolean;
   isMe: boolean;
   /**
-   * 진영(기업/리더/기관) 표시명. 듄/SETI는 아직 전적 목록에 표시하지
-   * 않기로 했으므로(사용자 확정, 이후 별도 작업) 테라포밍 마스 매치에서만
-   * 채워진다.
+   * 진영(기업/리더/기관) 표시명. 게임이 진영을 가지는지(capabilities의
+   * hasFactions)로만 판단하고 게임 종류를 직접 분기하지 않는다.
    */
   faction: FactionCatalogEntry | null;
 }
@@ -140,11 +140,12 @@ export function buildMatchHistory(
     const game = gameById.get(match.gameId);
     if (!game) continue;
 
-    // 듄/SETI의 리더·기관 표시는 별도 작업에서 진행하기로 했으므로
-    // (사용자 확정), 진영명은 테라포밍 마스 매치에서만 채운다.
     const isTerraformingMars = game.slug === "terraforming-mars";
     const showExpansions =
       !isTerraformingMars || match.playedAt >= TFM_EXPANSION_DISPLAY_CUTOFF;
+    // 진영(듄 리더/SETI 기관/테라포밍 마스 기업) 표시는 게임 종류를 직접
+    // 분기하지 않고, 그 게임이 진영을 가지는지(hasFactions)로만 판단한다.
+    const showFactions = getGameCapability(game.slug)?.hasFactions ?? false;
 
     const players: MatchHistoryPlayer[] = (
       playersByMatch.get(match.id) ?? []
@@ -155,7 +156,7 @@ export function buildMatchHistory(
       isWin: player.isWin,
       isMe: player.isMe,
       faction:
-        isTerraformingMars && player.factionId
+        showFactions && player.factionId
           ? (factionById.get(player.factionId) ?? null)
           : null,
     }));
