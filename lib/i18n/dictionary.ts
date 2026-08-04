@@ -9,8 +9,9 @@ export interface Dictionary {
     title: string;
     subtitle: string;
     newMatch: string;
-    totalMatches: string;
-    winRate: string;
+    record: string;
+    /** placeholders: {total}, {wins}, {losses}, {rate} */
+    overallSummaryTemplate: string;
     perGameTitle: string;
     perGameHint: string;
     noMatchesForGame: string;
@@ -105,8 +106,8 @@ const ko: Dictionary = {
     title: "대시보드",
     subtitle: "지금까지 기록한 전적을 한눈에 확인하세요.",
     newMatch: "새 매치 기록",
-    totalMatches: "총 게임 횟수",
-    winRate: "승률",
+    record: "전적",
+    overallSummaryTemplate: "{total}전 {wins}승 {losses}패 {rate}",
     perGameTitle: "게임별 기록",
     perGameHint:
       "게임을 클릭하면 아래 전적 기록을 해당 게임만 필터링해서 볼 수 있어요. 다시 클릭하면 필터가 해제됩니다.",
@@ -200,8 +201,8 @@ const en: Dictionary = {
     title: "Dashboard",
     subtitle: "See all of your recorded matches at a glance.",
     newMatch: "Log new match",
-    totalMatches: "Total matches",
-    winRate: "Win rate",
+    record: "Record",
+    overallSummaryTemplate: "{total} games · {wins}W {losses}L · {rate} win rate",
     perGameTitle: "By game",
     perGameHint:
       "Click a game to filter the match history below to just that game. Click again to clear the filter.",

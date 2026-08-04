@@ -29,26 +29,39 @@ export default async function DashboardPage({
   // PostgREST가 아주 짧게 "JWT issued at future"(PGRST303)를 반환할 수
   // 있다. 실제 세션은 유효하므로, 이 경우에 한해 짧게 재시도한다
   // (lib/supabase/with-retry.ts 참고).
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const [
     { data: games, error: gamesError },
     { data: matches, error: matchesError },
     { data: matchPlayers, error: matchPlayersError },
     { data: matchExpansions, error: matchExpansionsError },
     { data: expansions, error: expansionsError },
+    { data: viewerProfile, error: viewerProfileError },
   ] = await runWithAuthRetry(() =>
     Promise.all([
       supabase
         .from("games")
         .select("id, slug, name_ko, name_en")
         .order("slug"),
+      // RLS(matches_select_owner_or_name_match 경유)가 본인 소유 매치뿐
+      // 아니라, 로그인한 사용자의 표시 이름과 같은 이름의 플레이어가 등장하는
+      // 매치도 함께 노출한다.
       supabase.from("matches").select("id, game_id, played_at"),
-      // RLS(matches_owner_all 경유)가 본인 매치의 플레이어만 노출하므로
-      // is_me로 거르지 않고 매치에 참여한 모든 플레이어를 가져온다.
+      // 마찬가지로 match_players도 소유 매치 또는 이름이 일치하는 매치의
+      // 플레이어를 모두 가져온다. is_me는 매치를 "기록한" 사람 기준으로
+      // 고정된 값이라 로그인한 사용자 본인을 가리키지 않을 수 있으므로,
+      // 아래에서 viewerProfile.display_name과 비교해 다시 계산한다.
       supabase
         .from("match_players")
         .select("match_id, name, score, rank, is_win, is_me"),
       supabase.from("match_expansions").select("match_id, expansion_id"),
       supabase.from("expansions").select("id, name_ko, name_en"),
+      user
+        ? supabase.from("profiles").select("display_name").eq("id", user.id).single()
+        : Promise.resolve({ data: null, error: null }),
     ]),
   );
 
@@ -57,10 +70,13 @@ export default async function DashboardPage({
     matchesError ||
     matchPlayersError ||
     matchExpansionsError ||
-    expansionsError
+    expansionsError ||
+    viewerProfileError
   ) {
     throw new Error("대시보드 데이터를 불러오지 못했습니다.");
   }
+
+  const viewerName = viewerProfile?.display_name ?? null;
 
   const gameCatalog = (games ?? []).map((g) => ({
     id: g.id,
@@ -73,13 +89,17 @@ export default async function DashboardPage({
     gameId: m.game_id,
     playedAt: m.played_at,
   }));
+  // "나"는 더 이상 매치를 기록한 사람이 저장해 둔 is_me가 아니라, 지금
+  // 로그인한 사용자의 표시 이름과 같은 이름의 플레이어로 조회 시점에 다시
+  // 판단한다. viewerName이 없으면(아직 설정에서 이름을 정하지 않은 사용자)
+  // 아무도 "나"로 표시되지 않는다.
   const allMatchPlayers = (matchPlayers ?? []).map((p) => ({
     matchId: p.match_id,
     name: p.name,
     score: p.score,
     rank: p.rank,
     isWin: p.is_win,
-    isMe: p.is_me,
+    isMe: viewerName !== null && p.name === viewerName,
   }));
   const myMatchResults = allMatchPlayers
     .filter((p) => p.isMe)
@@ -138,19 +158,16 @@ export default async function DashboardPage({
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-6">
-          <p className="text-sm text-zinc-400">{dict.dashboard.totalMatches}</p>
-          <p className="mt-2 text-3xl font-semibold text-zinc-50">
-            {stats.totalMatches}
-          </p>
-        </div>
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-6">
-          <p className="text-sm text-zinc-400">{dict.dashboard.winRate}</p>
-          <p className="mt-2 text-3xl font-semibold text-zinc-50">
-            {formatPercent(stats.overallWinRate)}
-          </p>
-        </div>
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-6">
+        <p className="text-sm text-zinc-400">{dict.dashboard.record}</p>
+        <p className="mt-2 text-3xl font-semibold text-zinc-50">
+          {formatTemplate(dict.dashboard.overallSummaryTemplate, {
+            total: stats.totalMatches,
+            wins: stats.totalWins,
+            losses: stats.totalMatches - stats.totalWins,
+            rate: formatPercent(stats.overallWinRate),
+          })}
+        </p>
       </div>
 
       <div>
