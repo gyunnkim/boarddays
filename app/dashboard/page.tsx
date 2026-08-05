@@ -6,6 +6,7 @@ import { buildMatchHistory } from "@/lib/domain/match-history";
 import { getGameCapability } from "@/lib/domain/capabilities";
 import { Badge } from "@/components/badge";
 import { MatchHistoryList } from "@/components/match-history-list";
+import { MatchHistoryFilters } from "@/components/match-history-filters";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { pickLocalized } from "@/lib/i18n/config";
@@ -14,12 +15,6 @@ import { formatTemplate } from "@/lib/i18n/format";
 function formatPercent(rate: number | null) {
   if (rate === null) return "—";
   return `${Math.round(rate * 100)}%`;
-}
-
-function filterChipClass(active: boolean) {
-  return active
-    ? "rounded-full border border-amber-500/70 bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-200"
-    : "rounded-full border border-stone-800 px-2.5 py-0.5 text-xs font-medium text-stone-400 transition-colors hover:border-stone-700 hover:text-stone-200";
 }
 
 export default async function DashboardPage({
@@ -233,30 +228,6 @@ export default async function DashboardPage({
   const summaryWins = visibleHistory.filter((entry) => entry.isWin).length;
   const summaryWinRate = summaryTotal > 0 ? summaryWins / summaryTotal : null;
 
-  function buildHistoryHref(overrides: {
-    map?: string | null;
-    corp?: string | null;
-    corpMine?: string | null;
-  }) {
-    const params = new URLSearchParams();
-    if (selectedSlug) params.set("game", selectedSlug);
-
-    const nextMap = overrides.map !== undefined ? overrides.map : selectedMapSlug;
-    if (nextMap) params.set("map", nextMap);
-
-    const nextCorp =
-      overrides.corp !== undefined ? overrides.corp : selectedCorpSlug;
-    if (nextCorp) params.set("corp", nextCorp);
-
-    // corp 필터가 없으면 "나" 상태도 의미가 없으므로 함께 초기화한다.
-    const nextCorpMine =
-      overrides.corpMine !== undefined ? overrides.corpMine : selectedCorpMine;
-    if (nextCorp && nextCorpMine === "1") params.set("corpMine", "1");
-
-    const query = params.toString();
-    return query ? `/dashboard?${query}` : "/dashboard";
-  }
-
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -366,69 +337,19 @@ export default async function DashboardPage({
           )}
         </div>
 
-        {(availableMaps.length > 0 || availableFactions.length > 0) && (
-          <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2">
-            {availableMaps.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-xs text-stone-500">
-                  {dict.dashboard.mapFilterLabel}
-                </span>
-                <Link
-                  href={buildHistoryHref({ map: null })}
-                  className={filterChipClass(!selectedMapSlug)}
-                >
-                  {dict.dashboard.filterAll}
-                </Link>
-                {availableMaps.map((map) => (
-                  <Link
-                    key={map.id}
-                    href={buildHistoryHref({
-                      map: selectedMapSlug === map.slug ? null : map.slug,
-                    })}
-                    className={filterChipClass(selectedMapSlug === map.slug)}
-                  >
-                    {pickLocalized(locale, map.nameKo, map.nameEn)}
-                  </Link>
-                ))}
-              </div>
-            )}
-            {availableFactions.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-xs text-stone-500">
-                  {gameCapability?.factionLabel ?? dict.dashboard.factionFilterLabel}
-                </span>
-                <Link
-                  href={buildHistoryHref({ corp: null })}
-                  className={filterChipClass(!selectedCorpSlug)}
-                >
-                  {dict.dashboard.filterAll}
-                </Link>
-                {availableFactions.map((faction) => (
-                  <Link
-                    key={faction.id}
-                    href={buildHistoryHref({
-                      corp:
-                        selectedCorpSlug === faction.slug ? null : faction.slug,
-                    })}
-                    className={filterChipClass(selectedCorpSlug === faction.slug)}
-                  >
-                    {pickLocalized(locale, faction.nameKo, faction.nameEn)}
-                  </Link>
-                ))}
-                {selectedCorpSlug && (
-                  <Link
-                    href={buildHistoryHref({
-                      corpMine: onlyMyFaction ? null : "1",
-                    })}
-                    className={filterChipClass(onlyMyFaction)}
-                  >
-                    {dict.dashboard.you}
-                  </Link>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+        <MatchHistoryFilters
+          gameSlug={selectedGame?.slug}
+          availableMaps={availableMaps}
+          availableFactions={availableFactions}
+          selectedMapSlug={selectedMapSlug}
+          selectedCorpSlug={selectedCorpSlug}
+          onlyMyFaction={onlyMyFaction}
+          factionFilterLabel={
+            gameCapability?.factionLabel ?? dict.dashboard.factionFilterLabel
+          }
+          locale={locale}
+          dict={dict}
+        />
 
         {visibleHistory.length > 0 ? (
           <MatchHistoryList
