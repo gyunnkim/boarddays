@@ -204,6 +204,10 @@ export default async function DashboardPage({
             .filter((player) => player.faction !== null)
             .map((player) => [player.faction!.slug, player.faction!]),
         ).values(),
+      ).sort((a, b) =>
+        pickLocalized(locale, a.nameKo, a.nameEn).localeCompare(
+          pickLocalized(locale, b.nameKo, b.nameEn),
+        ),
       )
     : [];
   const onlyMyFaction = Boolean(selectedCorpSlug) && selectedCorpMine === "1";
