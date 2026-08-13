@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { runWithAuthRetry } from "@/lib/supabase/with-retry";
 import { buildDashboardStats } from "@/lib/domain/stats";
-import { buildMatchHistory } from "@/lib/domain/match-history";
+import { buildMatchHistory, parsePlayerHandle } from "@/lib/domain/match-history";
 import { getGameCapability } from "@/lib/domain/capabilities";
 import { Badge } from "@/components/badge";
 import { MatchHistoryList } from "@/components/match-history-list";
@@ -25,6 +25,7 @@ export default async function DashboardPage({
     map?: string;
     corp?: string;
     corpMine?: string;
+    player?: string;
   }>;
 }) {
   const {
@@ -32,7 +33,11 @@ export default async function DashboardPage({
     map: selectedMapSlug,
     corp: selectedCorpSlug,
     corpMine: selectedCorpMine,
+    player: selectedPlayerHandleRaw,
   } = await searchParams;
+  // "이름#트라이코드" 형식이 아니면(입력 중이거나 형식이 틀리면) 필터를
+  // 적용하지 않는다 — match_players.name/tricode를 함께 매칭한다.
+  const selectedPlayerHandle = parsePlayerHandle(selectedPlayerHandleRaw);
   const supabase = await createClient();
   const locale = await getLocale();
   const dict = getDictionary(locale);
@@ -69,7 +74,7 @@ export default async function DashboardPage({
       // 아래에서 viewerProfile.display_name과 비교해 다시 계산한다.
       supabase
         .from("match_players")
-        .select("match_id, name, score, rank, is_win, is_me, faction_id"),
+        .select("match_id, name, tricode, score, rank, is_win, is_me, faction_id"),
       supabase.from("match_expansions").select("match_id, expansion_id"),
       supabase.from("expansions").select("id, name_ko, name_en"),
       supabase
@@ -134,6 +139,7 @@ export default async function DashboardPage({
   const allMatchPlayers = (matchPlayers ?? []).map((p) => ({
     matchId: p.match_id,
     name: p.name,
+    tricode: p.tricode,
     score: p.score,
     rank: p.rank,
     isWin: p.is_win,
@@ -236,12 +242,26 @@ export default async function DashboardPage({
             player.faction?.slug === selectedCorpSlug &&
             (!onlyMyFaction || player.isMe),
         ),
+    )
+    // "이름#트라이코드" 검색: match_players.name과 tricode를 함께
+    // 매칭한다(트라이코드를 모르는 상태로 기록된 플레이어 행은
+    // tricode가 null이라 애초에 매칭되지 않는다).
+    .filter(
+      (entry) =>
+        !selectedPlayerHandle ||
+        entry.players.some(
+          (player) =>
+            player.name === selectedPlayerHandle.name &&
+            player.tricode === selectedPlayerHandle.tricode,
+        ),
     );
 
-  // 상단 "전적" 요약은 게임/맵/기업 필터가 걸려 있으면 그 필터를 통과한
-  // 매치만으로 다시 계산한다(필터 없으면 buildMatchHistory가 만든 목록
-  // 전체이므로 결과적으로 전체 전적과 같다).
-  const isFiltered = Boolean(selectedSlug || selectedMapSlug || selectedCorpSlug);
+  // 상단 "전적" 요약은 게임/맵/기업/플레이어 필터가 걸려 있으면 그 필터를
+  // 통과한 매치만으로 다시 계산한다(필터 없으면 buildMatchHistory가 만든
+  // 목록 전체이므로 결과적으로 전체 전적과 같다).
+  const isFiltered = Boolean(
+    selectedSlug || selectedMapSlug || selectedCorpSlug || selectedPlayerHandle,
+  );
   const summaryTotal = visibleHistory.length;
   const summaryWins = visibleHistory.filter((entry) => entry.isWin).length;
   const summaryWinRate = summaryTotal > 0 ? summaryWins / summaryTotal : null;
@@ -362,6 +382,7 @@ export default async function DashboardPage({
           selectedMapSlug={selectedMapSlug}
           selectedCorpSlug={selectedCorpSlug}
           onlyMyFaction={onlyMyFaction}
+          selectedPlayerHandleRaw={selectedPlayerHandleRaw}
           factionFilterLabel={
             gameCapability?.factionLabel ?? dict.dashboard.factionFilterLabel
           }

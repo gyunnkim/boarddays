@@ -156,6 +156,7 @@ export interface Database {
           id: string;
           match_id: string;
           name: string;
+          tricode: string | null;
           score: number;
           rank: number;
           is_win: boolean;
@@ -170,6 +171,7 @@ export interface Database {
           id?: string;
           match_id: string;
           name: string;
+          tricode?: string | null;
           score: number;
           rank: number;
           is_win?: boolean;
@@ -184,6 +186,7 @@ export interface Database {
           id?: string;
           match_id?: string;
           name?: string;
+          tricode?: string | null;
           score?: number;
           rank?: number;
           is_win?: boolean;

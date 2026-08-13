@@ -57,6 +57,8 @@ export interface FactionCatalogEntry {
 export interface MatchPlayerRecord {
   matchId: string;
   name: string;
+  /** 영문 대문자/숫자 3글자. 상대 플레이어의 실제 계정을 모르면 null. */
+  tricode: string | null;
   score: number;
   rank: number;
   isWin: boolean;
@@ -66,6 +68,8 @@ export interface MatchPlayerRecord {
 
 export interface MatchHistoryPlayer {
   name: string;
+  /** 영문 대문자/숫자 3글자. 상대 플레이어의 실제 계정을 모르면 null. */
+  tricode: string | null;
   score: number;
   rank: number;
   isWin: boolean;
@@ -75,6 +79,30 @@ export interface MatchHistoryPlayer {
    * hasFactions)로만 판단하고 게임 종류를 직접 분기하지 않는다.
    */
   faction: FactionCatalogEntry | null;
+}
+
+/** "이름#트라이코드" 검색어 하나. */
+export interface PlayerHandle {
+  name: string;
+  tricode: string;
+}
+
+const PLAYER_HANDLE_PATTERN = /^(.+)#([A-Za-z0-9]{3})$/;
+
+/**
+ * "이름#트라이코드" 형식의 검색어를 파싱한다. 이름에 '#'이 포함될 수도
+ * 있으므로 마지막 '#' 기준으로 나눈다. 형식이 맞지 않으면(트라이코드가
+ * 3글자가 아니거나 '#'이 없으면) null을 반환해 필터를 적용하지 않는다.
+ */
+export function parsePlayerHandle(raw: string | undefined | null): PlayerHandle | null {
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  const match = trimmed.match(PLAYER_HANDLE_PATTERN);
+  if (!match) return null;
+  const name = match[1].trim();
+  const tricode = match[2].toUpperCase();
+  if (!name) return null;
+  return { name, tricode };
 }
 
 export interface MatchHistoryEntry {
@@ -153,6 +181,7 @@ export function buildMatchHistory(
       playersByMatch.get(match.id) ?? []
     ).map((player) => ({
       name: player.name,
+      tricode: player.tricode,
       score: player.score,
       rank: player.rank,
       isWin: player.isWin,

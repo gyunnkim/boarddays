@@ -26,11 +26,31 @@ function factionsEnabled(
 interface ParsedPlayer {
   id: string;
   name: string;
+  tricode: string | null;
   score: number;
   factionId: string | null;
   color: string | null;
   megacredits: number | null;
   scoreBreakdown: Record<string, number> | null;
+}
+
+const TRICODE_PATTERN = /^[A-Z0-9]{3}$/;
+
+/**
+ * 플레이어 트라이코드는 선택 입력이다(상대방의 정확한 트라이코드를 항상
+ * 아는 건 아니므로). 입력이 있으면 대문자로 정규화하고 형식(영문 대문자/
+ * 숫자 3글자)을 검증하며, 비어 있으면 null(모름)로 취급한다. 형식이
+ * 잘못된 값이 입력되면 invalid로 표시해 매치 저장 자체를 막는다.
+ */
+function parseTricode(
+  raw: FormDataEntryValue | null,
+): { valid: true; tricode: string | null } | { valid: false } {
+  if (typeof raw !== "string") return { valid: true, tricode: null };
+  const trimmed = raw.trim().toUpperCase();
+  if (!trimmed) return { valid: true, tricode: null };
+  return TRICODE_PATTERN.test(trimmed)
+    ? { valid: true, tricode: trimmed }
+    : { valid: false };
 }
 
 function parsePlayers(
@@ -44,6 +64,9 @@ function parsePlayers(
   for (const id of playerIds) {
     const name = formData.get(`player_name_${id}`);
     if (typeof name !== "string" || !name.trim()) return null;
+
+    const tricodeResult = parseTricode(formData.get(`player_tricode_${id}`));
+    if (!tricodeResult.valid) return null;
 
     const factionsOn = factionsEnabled(capability, selectedExpansionSlugs);
     const factionRaw = formData.get(`player_faction_${id}`);
@@ -102,6 +125,7 @@ function parsePlayers(
     players.push({
       id,
       name: name.trim(),
+      tricode: tricodeResult.tricode,
       score,
       factionId,
       color,
@@ -252,7 +276,7 @@ export async function createMatch(
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("display_name")
+    .select("display_name, tricode")
     .eq("id", user.id)
     .single();
 
@@ -268,6 +292,16 @@ export async function createMatch(
     };
   }
   const meId = meMatches[0]?.id ?? null;
+
+  // "나"로 식별된 플레이어의 트라이코드는 폼 입력값과 관계없이 항상 내
+  // 프로필의 트라이코드로 덮어쓴다 — 본인 계정 정보이므로 직접 입력할
+  // 필요가 없고, 잘못 입력해 다른 사람으로 매칭되는 일을 막는다.
+  if (meId) {
+    const mePlayer = players.find((p) => p.id === meId);
+    if (mePlayer) {
+      mePlayer.tricode = profile.tricode;
+    }
+  }
 
   if (factionsEnabled(capability, selectedExpansionSlugs)) {
     const factionIds = players.map((p) => p.factionId);
@@ -343,6 +377,7 @@ export async function createMatch(
     players.map((p) => ({
       match_id: match.id,
       name: p.name,
+      tricode: p.tricode,
       score: p.score,
       rank: ranks.get(p.id)!,
       is_win: ranks.get(p.id) === 1,

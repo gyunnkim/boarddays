@@ -73,6 +73,7 @@ export function MatchForm({
   colonies,
   capability,
   myNames,
+  myTricode,
   defaultExpansionIds,
   locale,
   dict,
@@ -84,6 +85,7 @@ export function MatchForm({
   colonies: ColonyOption[];
   capability: GameCapability;
   myNames: string[];
+  myTricode: string | null;
   defaultExpansionIds: string[];
   locale: Locale;
   dict: Dictionary["matchForm"];
@@ -579,6 +581,25 @@ export function MatchForm({
                       defaultValue={index === 0 ? myNames[0] : undefined}
                       placeholder={dict.namePlaceholder}
                       className="w-full rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-sm text-stone-50 outline-none focus:border-amber-600"
+                    />
+                  </div>
+
+                  <div className="w-24 shrink-0 space-y-1">
+                    <label
+                      htmlFor={`${formId}-tricode-${row.id}`}
+                      className="text-xs text-stone-400"
+                    >
+                      {dict.tricode}
+                    </label>
+                    <input
+                      id={`${formId}-tricode-${row.id}`}
+                      name={`player_tricode_${row.id}`}
+                      type="text"
+                      maxLength={3}
+                      pattern="[A-Za-z0-9]{3}"
+                      defaultValue={index === 0 ? (myTricode ?? undefined) : undefined}
+                      placeholder={dict.tricodePlaceholder}
+                      className="w-full rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-center text-sm uppercase tracking-widest text-stone-50 outline-none focus:border-amber-600"
                     />
                   </div>
 

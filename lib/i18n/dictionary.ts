@@ -23,6 +23,11 @@ export interface Dictionary {
     mapFilterLabel: string;
     factionFilterLabel: string;
     filterAll: string;
+    playerFilterLabel: string;
+    playerFilterPlaceholder: string;
+    playerFilterApply: string;
+    playerFilterClear: string;
+    playerFilterInvalidHint: string;
     win: string;
     lose: string;
     /** placeholder: {n} */
@@ -110,6 +115,8 @@ export interface Dictionary {
     remove: string;
     name: string;
     namePlaceholder: string;
+    tricode: string;
+    tricodePlaceholder: string;
     color: string;
     selectColor: string;
     colorRequired: string;
@@ -142,6 +149,12 @@ const ko: Dictionary = {
     mapFilterLabel: "맵",
     factionFilterLabel: "진영",
     filterAll: "전체",
+    playerFilterLabel: "플레이어 검색",
+    playerFilterPlaceholder: "이름#트라이코드 (예: 김기훈#KOR)",
+    playerFilterApply: "검색",
+    playerFilterClear: "지우기",
+    playerFilterInvalidHint:
+      '"이름#트라이코드" 형식으로 입력해 주세요(예: 김기훈#KOR).',
     win: "승",
     lose: "패",
     rankTemplate: "{n}위",
@@ -233,6 +246,8 @@ const ko: Dictionary = {
     remove: "삭제",
     name: "이름",
     namePlaceholder: "이름을 선택하거나 입력하세요",
+    tricode: "트라이코드",
+    tricodePlaceholder: "선택, 예: KOR",
     color: "색상",
     selectColor: "색상 선택",
     colorRequired: "색상을 선택해 주세요.",
@@ -266,6 +281,12 @@ const en: Dictionary = {
     mapFilterLabel: "Map",
     factionFilterLabel: "Faction",
     filterAll: "All",
+    playerFilterLabel: "Search player",
+    playerFilterPlaceholder: "Name#TRICODE (e.g. Alex#KOR)",
+    playerFilterApply: "Search",
+    playerFilterClear: "Clear",
+    playerFilterInvalidHint:
+      'Enter in "Name#TRICODE" format (e.g. Alex#KOR).',
     win: "Win",
     lose: "Loss",
     rankTemplate: "#{n}",
@@ -356,6 +377,8 @@ const en: Dictionary = {
     remove: "Remove",
     name: "Name",
     namePlaceholder: "Choose or enter a name",
+    tricode: "Tricode",
+    tricodePlaceholder: "Optional, e.g. KOR",
     color: "Color",
     selectColor: "Select a color",
     colorRequired: "Please select a color.",

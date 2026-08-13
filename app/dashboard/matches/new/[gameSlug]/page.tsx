@@ -77,7 +77,7 @@ export default async function NewMatchGameFormPage({
           .order("group_slug")
           .order("name_en")
       : Promise.resolve({ data: [], error: null }),
-    supabase.from("profiles").select("display_name").maybeSingle(),
+    supabase.from("profiles").select("display_name, tricode").maybeSingle(),
     capability.hasMapSelection
       ? supabase
           .from("terraforming_mars_maps")
@@ -128,6 +128,7 @@ export default async function NewMatchGameFormPage({
   }
 
   const myNames = profile?.display_name ? [profile.display_name] : [];
+  const myTricode = profile?.tricode ?? null;
 
   return (
     <div className="space-y-8">
@@ -146,6 +147,7 @@ export default async function NewMatchGameFormPage({
         colonies={coloniesResult.data ?? []}
         capability={capability}
         myNames={myNames}
+        myTricode={myTricode}
         defaultExpansionIds={defaultExpansionIds}
         locale={locale}
         dict={dict.matchForm}
