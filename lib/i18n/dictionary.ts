@@ -74,6 +74,15 @@ export interface Dictionary {
     myNameTitle: string;
     noNameSet: string;
     readonlyHint: string;
+    tricodeTitle: string;
+    tricodeDescription: string;
+    tricodeLabel: string;
+    tricodePlaceholder: string;
+    tricodeNotSet: string;
+    tricodeSave: string;
+    tricodeSaving: string;
+    tricodeSaved: string;
+    tricodeNeedsNameFirst: string;
   };
   newMatch: {
     title: string;
@@ -164,7 +173,7 @@ const ko: Dictionary = {
     name: "이름",
     namePlaceholder: "예: 김보드",
     nameHint:
-      '매치 입력 화면에서 "나"를 식별하는 데 쓰이는 이름입니다. boarddays 서비스 전체에서 유일해야 하며, 가입 후에는 변경할 수 없습니다.',
+      '매치 입력 화면에서 "나"를 식별하는 데 쓰이는 이름입니다. 다른 사용자와 이름이 겹쳐도 괜찮습니다(설정 화면에서 트라이코드를 정하면 "이름#트라이코드"로 구분돼요). 가입 후에는 이름을 변경할 수 없습니다.',
     password: "비밀번호",
     passwordHint: "6자 이상 입력해 주세요.",
     submitting: "가입 중...",
@@ -186,6 +195,17 @@ const ko: Dictionary = {
     noNameSet: "설정된 이름이 없습니다.",
     readonlyHint:
       '이름은 가입할 때 한 번만 정할 수 있으며, 이후에는 이 화면에서 수정할 수 없습니다.',
+    tricodeTitle: "트라이코드",
+    tricodeDescription:
+      '동명이인을 구분하기 위한 영문 대문자/숫자 3글자 코드입니다. "이름#트라이코드" 조합은 서비스 전체에서 유일해야 하며, 이 화면에서 언제든 다시 정할 수 있습니다.',
+    tricodeLabel: "트라이코드",
+    tricodePlaceholder: "예: KOR",
+    tricodeNotSet: "아직 트라이코드가 설정되지 않았습니다.",
+    tricodeSave: "저장",
+    tricodeSaving: "저장 중...",
+    tricodeSaved: "트라이코드를 저장했습니다.",
+    tricodeNeedsNameFirst:
+      "이름이 아직 설정되지 않아 트라이코드를 정할 수 없습니다.",
   },
   newMatch: {
     title: "새 매치 기록",
@@ -277,7 +297,7 @@ const en: Dictionary = {
     name: "Name",
     namePlaceholder: "e.g. Alex",
     nameHint:
-      'Used to identify "me" in the match entry screen. It must be unique across boarddays and can\'t be changed after sign up.',
+      'Used to identify "me" in the match entry screen. It\'s fine if it matches someone else\'s name (set a tricode in Settings to be identified as "Name#TRICODE"). It can\'t be changed after sign up.',
     password: "Password",
     passwordHint: "Use at least 6 characters.",
     submitting: "Signing up...",
@@ -299,6 +319,16 @@ const en: Dictionary = {
     noNameSet: "No name set.",
     readonlyHint:
       "Your name is set once at sign up and can't be edited from this screen.",
+    tricodeTitle: "Tricode",
+    tricodeDescription:
+      'A 3-character code (uppercase letters/digits) used to tell people with the same name apart. The "Name#TRICODE" combination must be unique across boarddays, and you can change it here at any time.',
+    tricodeLabel: "Tricode",
+    tricodePlaceholder: "e.g. KOR",
+    tricodeNotSet: "No tricode set yet.",
+    tricodeSave: "Save",
+    tricodeSaving: "Saving...",
+    tricodeSaved: "Tricode saved.",
+    tricodeNeedsNameFirst: "Set your name first before choosing a tricode.",
   },
   newMatch: {
     title: "Log new match",

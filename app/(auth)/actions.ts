@@ -25,35 +25,16 @@ function readCredentials(formData: FormData) {
 /**
  * 회원가입/게스트 입장 시 이름은 그 시점에 한 번만 입력받는다(이후
  * 설정 화면에서 수정 불가). 공백만 입력된 경우도 미입력으로 취급한다.
+ *
+ * 이름 자체는 더 이상 서비스 전체에서 유일할 필요가 없다(동명이인 허용 —
+ * 대신 "이름 + 트라이코드" 조합이 유일해야 한다, settings/actions.ts
+ * 참고). 그래서 가입/게스트 입장 시점에는 이름 중복 여부를 확인하지
+ * 않는다. 트라이코드는 계정 생성 후 설정 화면에서 정한다.
  */
 function readDisplayName(formData: FormData): string | null {
   const raw = formData.get("display_name");
   const name = typeof raw === "string" ? raw.trim() : "";
   return name || null;
-}
-
-/**
- * 가입/게스트 입장 전에 이름 중복 여부를 미리 확인한다. 최종 무결성은
- * profiles_display_name_key unique 제약과 handle_new_user 트리거가
- * 보장하므로, 이 확인은 사용자에게 더 이른 시점에 친절한 에러 메시지를
- * 보여주기 위한 것일 뿐이다.
- */
-async function checkDisplayNameAvailable(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  displayName: string,
-): Promise<string | null> {
-  const { data: available, error } = await supabase.rpc(
-    "is_display_name_available",
-    { p_display_name: displayName },
-  );
-
-  if (error) {
-    return "이름 확인에 실패했습니다. 잠시 후 다시 시도해 주세요.";
-  }
-  if (!available) {
-    return "이미 사용 중인 이름입니다.";
-  }
-  return null;
 }
 
 export async function signIn(
@@ -92,11 +73,6 @@ export async function signUp(
   }
 
   const supabase = await createClient();
-
-  const nameError = await checkDisplayNameAvailable(supabase, displayName);
-  if (nameError) {
-    return { error: nameError };
-  }
 
   const { data, error } = await supabase.auth.signUp({
     ...credentials,
@@ -179,11 +155,6 @@ export async function signInAsGuest(
   }
 
   const supabase = await createClient();
-
-  const nameError = await checkDisplayNameAvailable(supabase, displayName);
-  if (nameError) {
-    return { error: nameError };
-  }
 
   const { error } = await supabase.auth.signInAnonymously({
     options: { data: { display_name: displayName } },

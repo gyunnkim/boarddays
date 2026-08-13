@@ -11,16 +11,19 @@ export interface Database {
         Row: {
           id: string;
           display_name: string | null;
+          tricode: string | null;
           created_at: string;
         };
         Insert: {
           id: string;
           display_name?: string | null;
+          tricode?: string | null;
           created_at?: string;
         };
         Update: {
           id?: string;
           display_name?: string | null;
+          tricode?: string | null;
           created_at?: string;
         };
         Relationships: [];
@@ -277,8 +280,8 @@ export interface Database {
     };
     Views: Record<string, never>;
     Functions: {
-      is_display_name_available: {
-        Args: { p_display_name: string };
+      is_display_name_tricode_available: {
+        Args: { p_display_name: string; p_tricode: string };
         Returns: boolean;
       };
     };

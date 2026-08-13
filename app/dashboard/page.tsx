@@ -96,6 +96,20 @@ export default async function DashboardPage({
     playerFactionsError ||
     viewerProfileError
   ) {
+    // 화면에는 일반화된 메시지만 보여주지만(error.tsx), 원인 파악을 위해
+    // 실제 Postgrest 에러(code/message)는 서버 로그에 남긴다. 재시도
+    // (runWithAuthRetry) 후에도 실패했다는 뜻이므로, 클럭 스큐 재시도로
+    // 해결되지 않는 다른 원인이면 여기서 code/message로 구분할 수 있다.
+    console.error("대시보드 데이터 조회 실패", {
+      gamesError,
+      matchesError,
+      matchPlayersError,
+      matchExpansionsError,
+      expansionsError,
+      terraformingMarsMapsError,
+      playerFactionsError,
+      viewerProfileError,
+    });
     throw new Error("대시보드 데이터를 불러오지 못했습니다.");
   }
 
