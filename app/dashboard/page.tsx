@@ -8,7 +8,6 @@ import { getGameCapability } from "@/lib/domain/capabilities";
 import { Badge } from "@/components/badge";
 import { MatchHistoryList } from "@/components/match-history-list";
 import { MatchHistoryFilters } from "@/components/match-history-filters";
-import { PlayerSearchBar } from "@/components/player-search-bar";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { pickLocalized } from "@/lib/i18n/config";
@@ -327,8 +326,6 @@ export default async function DashboardPage({
           </Link>
         )}
       </div>
-
-      <PlayerSearchBar dict={dict.dashboard} />
 
       {selectedPlayerHandle &&
         (searchedPlayerTotal > 0 ? (

@@ -5,6 +5,7 @@ import { signOut } from "@/app/(auth)/actions";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { LocaleToggle } from "@/components/locale-toggle";
+import { PlayerSearchBar } from "@/components/player-search-bar";
 
 export default async function DashboardLayout({
   children,
@@ -26,13 +27,16 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
-      <header className="flex items-center justify-between border-b border-stone-800 px-6 py-4">
+      <header className="flex items-center gap-4 border-b border-stone-800 px-6 py-4">
         <Link
           href="/dashboard"
           className="text-sm font-semibold tracking-tight text-stone-50 transition-colors hover:text-stone-300"
         >
           boarddays
         </Link>
+        <div className="flex flex-1 justify-center">
+          <PlayerSearchBar dict={dict.dashboard} />
+        </div>
         <div className="flex items-center gap-4">
           <LocaleToggle locale={locale} />
           <Link
