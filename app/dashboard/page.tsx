@@ -3,10 +3,12 @@ import { createClient } from "@/lib/supabase/server";
 import { runWithAuthRetry } from "@/lib/supabase/with-retry";
 import { buildDashboardStats } from "@/lib/domain/stats";
 import { buildMatchHistory, parsePlayerHandle } from "@/lib/domain/match-history";
+import type { MatchHistoryPlayer } from "@/lib/domain/match-history";
 import { getGameCapability } from "@/lib/domain/capabilities";
 import { Badge } from "@/components/badge";
 import { MatchHistoryList } from "@/components/match-history-list";
 import { MatchHistoryFilters } from "@/components/match-history-filters";
+import { PlayerSearchBar } from "@/components/player-search-bar";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { pickLocalized } from "@/lib/i18n/config";
@@ -243,18 +245,45 @@ export default async function DashboardPage({
             (!onlyMyFaction || player.isMe),
         ),
     )
-    // "이름#트라이코드" 검색: match_players.name과 tricode를 함께
-    // 매칭한다(트라이코드를 모르는 상태로 기록된 플레이어 행은
-    // tricode가 null이라 애초에 매칭되지 않는다).
+    // "이름#트라이코드" 검색: match_players.name을 기준으로 매칭하고,
+    // tricode가 기록되어 있으면 그 값도 함께 맞아야 한다. 상대 플레이어는
+    // 매치 기록 시 트라이코드를 입력하지 않는 경우가 많아(tricode가
+    // null) 이름만으로도 매칭되게 해야 실제로 검색이 동작한다. tricode가
+    // 기록된 행은 검색어의 트라이코드와 다르면 매칭하지 않는다(동명이인
+    // 오검색 방지).
     .filter(
       (entry) =>
         !selectedPlayerHandle ||
         entry.players.some(
           (player) =>
             player.name === selectedPlayerHandle.name &&
-            player.tricode === selectedPlayerHandle.tricode,
+            (player.tricode === null ||
+              player.tricode === selectedPlayerHandle.tricode),
         ),
     );
+
+  // 검색된 플레이어 본인의 전적(내 전적이 아니라 검색 대상의 순위/승패
+  // 기준)을 대시보드에 함께 보여주기 위해 계산한다.
+  const searchedPlayerMatches: { entry: (typeof visibleHistory)[number]; player: MatchHistoryPlayer }[] =
+    selectedPlayerHandle
+      ? visibleHistory.flatMap((entry) => {
+          const player = entry.players.find(
+            (p) =>
+              p.name === selectedPlayerHandle.name &&
+              (p.tricode === null || p.tricode === selectedPlayerHandle.tricode),
+          );
+          return player ? [{ entry, player }] : [];
+        })
+      : [];
+  const searchedPlayerTotal = searchedPlayerMatches.length;
+  const searchedPlayerWins = searchedPlayerMatches.filter(
+    ({ player }) => player.isWin,
+  ).length;
+  const searchedPlayerWinRate =
+    searchedPlayerTotal > 0 ? searchedPlayerWins / searchedPlayerTotal : null;
+  const searchedPlayerHandleLabel = selectedPlayerHandle
+    ? `${selectedPlayerHandle.name}#${selectedPlayerHandle.tricode}`
+    : null;
 
   // 상단 "전적" 요약은 게임/맵/기업/플레이어 필터가 걸려 있으면 그 필터를
   // 통과한 매치만으로 다시 계산한다(필터 없으면 buildMatchHistory가 만든
@@ -298,6 +327,31 @@ export default async function DashboardPage({
           </Link>
         )}
       </div>
+
+      <PlayerSearchBar dict={dict.dashboard} />
+
+      {selectedPlayerHandle &&
+        (searchedPlayerTotal > 0 ? (
+          <div className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-6">
+            <p className="text-sm text-stone-400">
+              {formatTemplate(dict.dashboard.playerInfoHeadingTemplate, {
+                handle: searchedPlayerHandleLabel ?? "",
+              })}
+            </p>
+            <p className="mt-2 text-3xl font-semibold text-stone-50">
+              {formatTemplate(dict.dashboard.overallSummaryTemplate, {
+                total: searchedPlayerTotal,
+                wins: searchedPlayerWins,
+                losses: searchedPlayerTotal - searchedPlayerWins,
+                rate: formatPercent(searchedPlayerWinRate),
+              })}
+            </p>
+          </div>
+        ) : (
+          <p className="text-sm text-stone-500">
+            {dict.dashboard.playerInfoEmpty}
+          </p>
+        ))}
 
       <div className="rounded-xl border border-stone-800 bg-stone-900/60 p-6">
         <p className="text-sm text-stone-400">
@@ -382,7 +436,6 @@ export default async function DashboardPage({
           selectedMapSlug={selectedMapSlug}
           selectedCorpSlug={selectedCorpSlug}
           onlyMyFaction={onlyMyFaction}
-          selectedPlayerHandleRaw={selectedPlayerHandleRaw}
           factionFilterLabel={
             gameCapability?.factionLabel ?? dict.dashboard.factionFilterLabel
           }

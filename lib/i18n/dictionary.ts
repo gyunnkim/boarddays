@@ -28,6 +28,9 @@ export interface Dictionary {
     playerFilterApply: string;
     playerFilterClear: string;
     playerFilterInvalidHint: string;
+    /** placeholder: {handle} */
+    playerInfoHeadingTemplate: string;
+    playerInfoEmpty: string;
     win: string;
     lose: string;
     /** placeholder: {n} */
@@ -155,6 +158,8 @@ const ko: Dictionary = {
     playerFilterClear: "지우기",
     playerFilterInvalidHint:
       '"이름#트라이코드" 형식으로 입력해 주세요(예: 김기훈#KOR).',
+    playerInfoHeadingTemplate: "{handle} 전적",
+    playerInfoEmpty: "검색한 플레이어와 함께한 매치가 없습니다.",
     win: "승",
     lose: "패",
     rankTemplate: "{n}위",
@@ -287,6 +292,8 @@ const en: Dictionary = {
     playerFilterClear: "Clear",
     playerFilterInvalidHint:
       'Enter in "Name#TRICODE" format (e.g. Alex#KOR).',
+    playerInfoHeadingTemplate: "{handle}'s record",
+    playerInfoEmpty: "No matches found with that player.",
     win: "Win",
     lose: "Loss",
     rankTemplate: "#{n}",
