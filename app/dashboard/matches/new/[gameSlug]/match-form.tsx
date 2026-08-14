@@ -663,7 +663,7 @@ export function MatchForm({
 
                 {capability.scoreComponents && (
                   <div className="flex flex-wrap items-end gap-3">
-                    <div className="grid flex-1 grid-cols-2 gap-3 sm:grid-cols-4">
+                    <div className="grid min-w-full grid-cols-2 gap-3 sm:min-w-0 sm:flex-1 sm:grid-cols-4">
                       {activeScoreComponents.map((component) => (
                         <div key={component.key} className="space-y-1">
                           <label
@@ -692,7 +692,7 @@ export function MatchForm({
                       ))}
                     </div>
 
-                    <div className="flex gap-3">
+                    <div className="flex shrink-0 gap-3">
                       <div className="w-24 space-y-1">
                         <span className="block text-xs text-stone-400">
                           {dict.total}
