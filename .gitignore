@@ -37,6 +37,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# supabase migrations: 이 저장소는 서비스 배포가 목적이라 DB 마이그레이션을
+# 다른 사람이 그대로 재배포하는 걸 의도하지 않는다. 로컬 작업으로만 관리한다.
+/supabase/migrations/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
