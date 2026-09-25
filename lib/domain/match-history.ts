@@ -18,6 +18,12 @@ export interface MatchRecord {
   id: string;
   gameId: string;
   playedAt: string;
+  /**
+   * 매치를 기록한(DB에 insert한) 시각. played_at이 date(시각 정보 없음)라
+   * 같은 날짜에 여러 매치를 기록하면 순서를 구분할 수 없어, 정렬의
+   * 2차 기준으로만 사용한다(1차 기준인 playedAt 자체의 대체재는 아니다).
+   */
+  createdAt: string;
   /** 테라포밍 마스 매치가 사용한 맵. 다른 게임이거나 미지정이면 null. */
   mapId: string | null;
 }
@@ -109,6 +115,7 @@ export interface MatchHistoryEntry {
   matchId: string;
   game: GameCatalogEntry;
   playedAt: string;
+  createdAt: string;
   myScore: number;
   myRank: number;
   isWin: boolean;
@@ -196,6 +203,7 @@ export function buildMatchHistory(
       matchId: match.id,
       game,
       playedAt: match.playedAt,
+      createdAt: match.createdAt,
       myScore: result.score,
       myRank: result.rank,
       map: isTerraformingMars && match.mapId ? (mapById.get(match.mapId) ?? null) : null,
@@ -205,5 +213,9 @@ export function buildMatchHistory(
     });
   }
 
-  return entries.sort((a, b) => b.playedAt.localeCompare(a.playedAt));
+  return entries.sort((a, b) => {
+    const byPlayedAt = b.playedAt.localeCompare(a.playedAt);
+    if (byPlayedAt !== 0) return byPlayedAt;
+    return b.createdAt.localeCompare(a.createdAt);
+  });
 }

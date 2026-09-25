@@ -2,8 +2,10 @@
 
 import {
   useActionState,
+  useEffect,
   useId,
   useMemo,
+  useRef,
   useState,
   type FormEvent,
 } from "react";
@@ -65,6 +67,86 @@ function nextRowId() {
   return `row-${rowCounter}`;
 }
 
+// 매치 하나를 기록하는 데 2~3시간이 걸릴 수 있어, 최초 세팅(확장팩/이름/
+// 색깔/순서/맵 등)이 점수 입력 전에 새로고침이나 세션 만료로 날아가지
+// 않도록 게임별로 localStorage에 임시 저장한다. 서버에 보내지 않는
+// 브라우저 로컬 임시 저장일 뿐이라 민감 정보 취급은 하지 않는다.
+const DRAFT_VERSION = 1;
+
+function draftStorageKey(gameSlug: string) {
+  return `boarddays:match-draft:v${DRAFT_VERSION}:${gameSlug}`;
+}
+
+interface DraftState {
+  expansionIds: string[];
+  players: PlayerRow[];
+  factionByRow: Record<string, string>;
+  colorByRow: Record<string, string>;
+  mapId: string | null;
+  enabledMapGroups: string[];
+  promoFactionsOn: boolean;
+  drawnColonyIds: string[];
+  scoreValuesByRow: Record<string, Record<string, string>>;
+  nameByRow: Record<string, string>;
+  tricodeByRow: Record<string, string>;
+  scoreByRow: Record<string, string>;
+  mcByRow: Record<string, string>;
+}
+
+function createDefaultDraft(
+  defaultExpansionIds: string[],
+  myNames: string[],
+  myTricode: string | null,
+): DraftState {
+  const initialPlayers: PlayerRow[] = [
+    { id: nextRowId() },
+    { id: nextRowId() },
+    { id: nextRowId() },
+  ];
+  return {
+    expansionIds: defaultExpansionIds,
+    players: initialPlayers,
+    factionByRow: {},
+    colorByRow: {},
+    mapId: null,
+    enabledMapGroups: [],
+    promoFactionsOn: false,
+    drawnColonyIds: [],
+    scoreValuesByRow: {},
+    nameByRow: { [initialPlayers[0].id]: myNames[0] ?? "" },
+    tricodeByRow: { [initialPlayers[0].id]: myTricode ?? "" },
+    scoreByRow: {},
+    mcByRow: {},
+  };
+}
+
+function readDraft(gameSlug: string): DraftState | null {
+  try {
+    const raw = window.localStorage.getItem(draftStorageKey(gameSlug));
+    if (!raw) return null;
+    return JSON.parse(raw) as DraftState;
+  } catch {
+    return null;
+  }
+}
+
+function writeDraft(gameSlug: string, draft: DraftState) {
+  try {
+    window.localStorage.setItem(draftStorageKey(gameSlug), JSON.stringify(draft));
+  } catch {
+    // 저장 실패(프라이빗 모드, 용량 초과 등)는 임시 저장 기능을 잃을 뿐
+    // 매치 입력 자체를 막을 이유는 아니라 조용히 무시한다.
+  }
+}
+
+function clearDraft(gameSlug: string) {
+  try {
+    window.localStorage.removeItem(draftStorageKey(gameSlug));
+  } catch {
+    // no-op
+  }
+}
+
 export function MatchForm({
   game,
   expansions,
@@ -94,30 +176,53 @@ export function MatchForm({
   const formId = useId();
   const nameListId = `${formId}-my-names`;
 
-  const [expansionIds, setExpansionIds] = useState<string[]>(
-    () => defaultExpansionIds,
+  const [draft, setDraft] = useState<DraftState>(() =>
+    createDefaultDraft(defaultExpansionIds, myNames, myTricode),
   );
-  const [players, setPlayers] = useState<PlayerRow[]>(() => [
-    { id: nextRowId() },
-    { id: nextRowId() },
-    { id: nextRowId() },
-  ]);
-  const [factionByRow, setFactionByRow] = useState<Record<string, string>>(
-    {},
-  );
-  const [colorByRow, setColorByRow] = useState<Record<string, string>>({});
+  const {
+    expansionIds,
+    players,
+    factionByRow,
+    colorByRow,
+    mapId,
+    enabledMapGroups,
+    promoFactionsOn,
+    drawnColonyIds,
+    scoreValuesByRow,
+    nameByRow,
+    tricodeByRow,
+    scoreByRow,
+    mcByRow,
+  } = draft;
+
   const [colorErrorRowIds, setColorErrorRowIds] = useState<Set<string>>(
     () => new Set(),
   );
-  const [mapId, setMapId] = useState<string | null>(null);
-  const [enabledMapGroups, setEnabledMapGroups] = useState<Set<string>>(
-    () => new Set(),
-  );
-  const [promoFactionsOn, setPromoFactionsOn] = useState(false);
-  const [drawnColonyIds, setDrawnColonyIds] = useState<string[]>([]);
-  const [scoreValuesByRow, setScoreValuesByRow] = useState<
-    Record<string, Record<string, string>>
-  >({});
+
+  // 복원 완료 전에 초기 상태를 그대로 저장해 버리면 복원해야 할 임시
+  // 저장 내용을 덮어써 버리므로, 복원 effect가 끝날 때까지 저장을 미룬다.
+  const draftRestored = useRef(false);
+
+  useEffect(() => {
+    const stored = readDraft(game.slug);
+    if (stored) {
+      // 마운트 시 localStorage에 남아 있던 임시 저장을 한 번 복원한다.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDraft(stored);
+
+      const maxRestoredId = stored.players.reduce((max, row) => {
+        const num = Number(row.id.replace("row-", ""));
+        return Number.isFinite(num) ? Math.max(max, num) : max;
+      }, 0);
+      rowCounter = Math.max(rowCounter, maxRestoredId);
+    }
+    draftRestored.current = true;
+  }, [game.slug]);
+
+  useEffect(() => {
+    if (!draftRestored.current) return;
+    writeDraft(game.slug, draft);
+  }, [game.slug, draft]);
 
   const availableFactions = factions.filter((f) => {
     if (capability.promoFactions && f.group_slug === capability.promoFactions.groupSlug) {
@@ -155,7 +260,7 @@ export function MatchForm({
   );
 
   const availableMaps = maps.filter(
-    (m) => m.map_group_slug === null || enabledMapGroups.has(m.map_group_slug),
+    (m) => m.map_group_slug === null || enabledMapGroups.includes(m.map_group_slug),
   );
   const effectiveMapId = availableMaps.some((m) => m.id === mapId)
     ? mapId
@@ -171,42 +276,53 @@ export function MatchForm({
   const colonyById = new Map(colonies.map((c) => [c.id, c]));
 
   function toggleExpansion(id: string) {
-    setExpansionIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
+    setDraft((prev) => ({
+      ...prev,
+      expansionIds: prev.expansionIds.includes(id)
+        ? prev.expansionIds.filter((x) => x !== id)
+        : [...prev.expansionIds, id],
+    }));
   }
 
   function toggleMapGroup(slug: string) {
-    setEnabledMapGroups((prev) => {
-      const next = new Set(prev);
-      if (next.has(slug)) {
-        next.delete(slug);
-      } else {
-        next.add(slug);
-      }
-      return next;
-    });
+    setDraft((prev) => ({
+      ...prev,
+      enabledMapGroups: prev.enabledMapGroups.includes(slug)
+        ? prev.enabledMapGroups.filter((x) => x !== slug)
+        : [...prev.enabledMapGroups, slug],
+    }));
   }
 
   function addPlayer() {
-    setPlayers((prev) => [...prev, { id: nextRowId() }]);
+    setDraft((prev) => ({
+      ...prev,
+      players: [...prev.players, { id: nextRowId() }],
+    }));
   }
 
   function removePlayer(id: string) {
-    setPlayers((prev) => {
-      const next = prev.filter((p) => p.id !== id);
-      if (next.length === 0) return prev;
-      return next;
-    });
-    setFactionByRow((prev) => {
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
-    setColorByRow((prev) => {
-      const next = { ...prev };
-      delete next[id];
-      return next;
+    setDraft((prev) => {
+      const nextPlayers = prev.players.filter((p) => p.id !== id);
+      if (nextPlayers.length === 0) return prev;
+
+      const dropId = <T,>(record: Record<string, T>) => {
+        if (!(id in record)) return record;
+        const next = { ...record };
+        delete next[id];
+        return next;
+      };
+
+      return {
+        ...prev,
+        players: nextPlayers,
+        factionByRow: dropId(prev.factionByRow),
+        colorByRow: dropId(prev.colorByRow),
+        scoreValuesByRow: dropId(prev.scoreValuesByRow),
+        nameByRow: dropId(prev.nameByRow),
+        tricodeByRow: dropId(prev.tricodeByRow),
+        scoreByRow: dropId(prev.scoreByRow),
+        mcByRow: dropId(prev.mcByRow),
+      };
     });
     setColorErrorRowIds((prev) => {
       if (!prev.has(id)) return prev;
@@ -214,28 +330,26 @@ export function MatchForm({
       next.delete(id);
       return next;
     });
-    setScoreValuesByRow((prev) => {
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
   }
 
   function randomizeOrder() {
-    setPlayers((prev) => {
-      const shuffled = [...prev];
+    setDraft((prev) => {
+      const shuffled = [...prev.players];
       for (let i = shuffled.length - 1; i > 0; i -= 1) {
         const j = Math.floor(Math.random() * (i + 1));
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
-      return shuffled;
+      return { ...prev, players: shuffled };
     });
   }
 
   function updateScoreValue(rowId: string, key: string, value: string) {
-    setScoreValuesByRow((prev) => ({
+    setDraft((prev) => ({
       ...prev,
-      [rowId]: { ...prev[rowId], [key]: value },
+      scoreValuesByRow: {
+        ...prev.scoreValuesByRow,
+        [rowId]: { ...prev.scoreValuesByRow[rowId], [key]: value },
+      },
     }));
   }
 
@@ -251,7 +365,7 @@ export function MatchForm({
     if (availableMaps.length === 0) return;
     const random =
       availableMaps[Math.floor(Math.random() * availableMaps.length)];
-    setMapId(random.id);
+    setDraft((prev) => ({ ...prev, mapId: random.id }));
   }
 
   function drawColonies() {
@@ -261,7 +375,10 @@ export function MatchForm({
       players.length + capability.colonyDraw.countOffset,
     );
     const shuffled = [...colonies].sort(() => Math.random() - 0.5);
-    setDrawnColonyIds(shuffled.slice(0, count).map((c) => c.id));
+    setDraft((prev) => ({
+      ...prev,
+      drawnColonyIds: shuffled.slice(0, count).map((c) => c.id),
+    }));
   }
 
   function factionOptionsForRow(rowId: string) {
@@ -284,7 +401,10 @@ export function MatchForm({
   }
 
   function setPlayerColor(rowId: string, value: string) {
-    setColorByRow((prev) => ({ ...prev, [rowId]: value }));
+    setDraft((prev) => ({
+      ...prev,
+      colorByRow: { ...prev.colorByRow, [rowId]: value },
+    }));
     setColorErrorRowIds((prev) => {
       if (!prev.has(rowId)) return prev;
       const next = new Set(prev);
@@ -297,11 +417,18 @@ export function MatchForm({
   // 명세상 constraint validation 대상에서 제외돼 required가 동작하지 않는다.
   // 그래서 색상 누락 여부만 제출 시점에 별도로 검사해 폼 제출을 막는다.
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    if (!capability.playerColors) return;
-    const missing = players.filter((row) => !colorByRow[row.id]);
-    if (missing.length === 0) return;
-    event.preventDefault();
-    setColorErrorRowIds(new Set(missing.map((row) => row.id)));
+    if (capability.playerColors) {
+      const missing = players.filter((row) => !colorByRow[row.id]);
+      if (missing.length > 0) {
+        event.preventDefault();
+        setColorErrorRowIds(new Set(missing.map((row) => row.id)));
+        return;
+      }
+    }
+    // 이 시점부터는 폼이 실제로 제출되어 성공 시 대시보드로 리다이렉트되므로
+    // (리다이렉트 후에는 이 컴포넌트가 언마운트돼 별도로 지울 기회가 없다)
+    // 임시 저장을 미리 비운다.
+    clearDraft(game.slug);
   }
 
   function renderFactionSelect(rowId: string) {
@@ -333,7 +460,10 @@ export function MatchForm({
         name={`player_faction_${rowId}`}
         value={effectiveFactionByRow[rowId] ?? ""}
         onChange={(e) =>
-          setFactionByRow((prev) => ({ ...prev, [rowId]: e.target.value }))
+          setDraft((prev) => ({
+            ...prev,
+            factionByRow: { ...prev.factionByRow, [rowId]: e.target.value },
+          }))
         }
         required
         className="w-full rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-sm text-stone-50 outline-none focus:border-amber-600"
@@ -403,7 +533,12 @@ export function MatchForm({
             <input
               type="checkbox"
               checked={promoFactionsOn}
-              onChange={() => setPromoFactionsOn((prev) => !prev)}
+              onChange={() =>
+                setDraft((prev) => ({
+                  ...prev,
+                  promoFactionsOn: !prev.promoFactionsOn,
+                }))
+              }
             />
             {capability.promoFactions.labelKo}
           </label>
@@ -429,7 +564,7 @@ export function MatchForm({
                 >
                   <input
                     type="checkbox"
-                    checked={enabledMapGroups.has(group.slug)}
+                    checked={enabledMapGroups.includes(group.slug)}
                     onChange={() => toggleMapGroup(group.slug)}
                   />
                   {group.labelKo}
@@ -441,7 +576,9 @@ export function MatchForm({
             <select
               name="terraforming_mars_map_id"
               value={effectiveMapId ?? ""}
-              onChange={(e) => setMapId(e.target.value)}
+              onChange={(e) =>
+                setDraft((prev) => ({ ...prev, mapId: e.target.value }))
+              }
               required
               className="rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-sm text-stone-50 outline-none focus:border-amber-600"
             >
@@ -578,7 +715,16 @@ export function MatchForm({
                       type="text"
                       list={nameListId}
                       required
-                      defaultValue={index === 0 ? myNames[0] : undefined}
+                      value={nameByRow[row.id] ?? ""}
+                      onChange={(e) =>
+                        setDraft((prev) => ({
+                          ...prev,
+                          nameByRow: {
+                            ...prev.nameByRow,
+                            [row.id]: e.target.value,
+                          },
+                        }))
+                      }
                       placeholder={dict.namePlaceholder}
                       className="w-full rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-sm text-stone-50 outline-none focus:border-amber-600"
                     />
@@ -597,7 +743,16 @@ export function MatchForm({
                       type="text"
                       maxLength={3}
                       pattern="[A-Za-z0-9]{3}"
-                      defaultValue={index === 0 ? (myTricode ?? undefined) : undefined}
+                      value={tricodeByRow[row.id] ?? ""}
+                      onChange={(e) =>
+                        setDraft((prev) => ({
+                          ...prev,
+                          tricodeByRow: {
+                            ...prev.tricodeByRow,
+                            [row.id]: e.target.value,
+                          },
+                        }))
+                      }
                       placeholder={dict.tricodePlaceholder}
                       className="w-full rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-center text-sm uppercase tracking-widest text-stone-50 outline-none focus:border-amber-600"
                     />
@@ -626,6 +781,16 @@ export function MatchForm({
                         type="number"
                         step="1"
                         required
+                        value={scoreByRow[row.id] ?? ""}
+                        onChange={(e) =>
+                          setDraft((prev) => ({
+                            ...prev,
+                            scoreByRow: {
+                              ...prev.scoreByRow,
+                              [row.id]: e.target.value,
+                            },
+                          }))
+                        }
                         className="w-full rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-sm text-stone-50 outline-none focus:border-amber-600"
                       />
                     </div>
@@ -645,6 +810,16 @@ export function MatchForm({
                         type="number"
                         step="1"
                         required
+                        value={mcByRow[row.id] ?? ""}
+                        onChange={(e) =>
+                          setDraft((prev) => ({
+                            ...prev,
+                            mcByRow: {
+                              ...prev.mcByRow,
+                              [row.id]: e.target.value,
+                            },
+                          }))
+                        }
                         className="w-full rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-sm text-stone-50 outline-none focus:border-amber-600"
                       />
                     </div>
@@ -716,6 +891,16 @@ export function MatchForm({
                             type="number"
                             step="1"
                             required
+                            value={mcByRow[row.id] ?? ""}
+                            onChange={(e) =>
+                              setDraft((prev) => ({
+                                ...prev,
+                                mcByRow: {
+                                  ...prev.mcByRow,
+                                  [row.id]: e.target.value,
+                                },
+                              }))
+                            }
                             className="w-full rounded-md border border-stone-700 bg-stone-950 px-3 py-2 text-sm text-stone-50 outline-none focus:border-amber-600"
                           />
                         </div>
